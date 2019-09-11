@@ -1,0 +1,80 @@
+---
+# file: tasks/gitlab-users.yml
+
+- name: Gitlab user config
+  block:
+  - name: Create gitlab {{ item.username }} user password
+    shell: "{{ generate_password_command }}"
+    register: gitlab_user_passwd_reg
+    no_log: true
+
+#  - name: Create gitlab {{ item.username }} user password
+#    shell: "{{ generate_password_command }} | sed 's/[^[:alnum:]]//g'"
+#    register: gitlab_user_passwd_reg
+#    no_log: true
+
+  - name: Set gitlab {{ item.username }} user password variable
+    set_fact:
+      gitlab_user_password: "{{ gitlab_user_passwd_reg.stdout | regex_replace('[^0-9a-zA-Z]') }}"
+      cacheable: no
+    when: gitlab_user_passwd_reg is succeeded
+    no_log: true
+
+  - name: Set gitlab root user password variable
+    set_fact:
+      gitlab_root_password: "{{ gitlab_user_password }}"
+      cacheable: no
+    when: item.username == "root"
+    no_log: true
+
+  - name: Create gitlab {{ item.username }} user
+    gitlab_user:
+      api_url: "{{ gitlab_external_url }}"
+      validate_certs: false
+      api_token: "{{ gitlab_admin_access_token }}"
+      name: "{{ item.name }}"
+      username: "{{ item.username }}"
+      password: "{{ gitlab_user_password }}"
+      email: "{{ item.email }}"
+#      sshkey_name: "{{ item.sshkey_name }}"
+#      sshkey_file: "{{ item.sshkey_file }}"
+      group: "{{ item.group }}"
+      access_level: "{{ item.access_level }}"
+      state: present
+    when: item.username != "root"
+
+  - name: Save gitlab {{ item.username }} user password
+    block:
+    - name: Set gitlab {{ item.username }} user password file variable
+      set_fact:
+        gitlab_user_passwd_path: "{{ gitlab_vault_passwd_dir }}/{{ inventory_hostname }}.{{ item.username }}"
+        cacheable: no
+
+    - name: Save gitlab {{ item.username }} user password
+      copy:
+        dest: "{{ gitlab_user_passwd_path }}"
+        content: |
+          {{ gitlab_user_password }}
+      no_log: true
+
+    - name: Encrypt gitlab {{ item.username }} user password file
+      command: "ansible-vault encrypt {{ gitlab_user_passwd_path }} --vault-id {{ vault_id_labels[0] }}@{{ vault_id_path }}/{{ vault_id_labels[0] }}_pass"
+
+    - include: "{{ playbook_dir }}/tasks/file-permission.yml"
+      with_together:
+        - "{{ gitlab_user_passwd_path }}"
+        - 'file'
+        - "{{ gitlab_vault_user }}"
+
+#    - name: Set permission to gitlab '{{ item.username }}' user password file
+#      file:
+#        path: "{{ gitlab_user_passwd_path }}"
+#        owner: "{{ vault_user.username }}"
+#        group: "{{ vault_user.own_group }}"
+#        mode: "{{ vault_user.file_mode }}"
+# END block Save gitlab password
+    delegate_to: localhost
+# END block Create gitlab user block
+  tags:
+    - gitlabuser
+    - gitlabroot

@@ -1,0 +1,9 @@
+---
+# file: group_vars/testweb.yml
+
+#ansible_user_srv: "{{ ansible_user_srv | combine({ 'sudo': 'nopass' }) }}"
+#vagrant_service_user: "{{ vagrant_service_user | combine({ 'sudo': 'nopass' }) }}"
+
+#users:
+#  - "{{ ansible_user_srv }}"
+#  - "{{ vagrant_service_user }}"

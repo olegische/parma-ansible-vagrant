@@ -1,0 +1,17 @@
+---
+# file: roles/gitlab/tasks/gitlab-firewall-RedHat.yml
+
+- name: Open ports with firewalld
+  firewalld:
+    service: "{{ item }}"
+    permanent: yes
+    zone: public
+    state: enabled
+  with_items: "{{ gitlab_ports_alias }}"
+  tags:
+    - firewall
+
+- name: Reload firewalld
+  command: firewall-cmd --reload
+  tags:
+    - firewall

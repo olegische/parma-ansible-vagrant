@@ -1,0 +1,22 @@
+---
+# file: roles/common/tasks/sudo.yml
+
+- name: Sudo config
+  block:
+  - name: Ensure sudoerd.d exists
+    file:
+      path: "{{ sudoers_dir_path }}"
+      state: directory
+      owner: root
+      group: root
+
+  - name: Install sudoers.d file "{{ item }}"
+    template:
+      dest: "{{ sudoers_dir_path }}/{{ item }}"
+      src: "{{ item }}.j2"
+      owner: root
+      group: root
+      mode: 0600
+  # END block Sudo config
+  tags:
+    - sudo

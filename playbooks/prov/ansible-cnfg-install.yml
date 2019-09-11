@@ -1,0 +1,14 @@
+---
+# file: ansible-cnfg-install.yml
+
+- name: Install ansible configuration
+  hosts: cmservers
+
+#  vars_prompt:
+#  - name: "ssh_passphrase"
+#    prompt: "Ansible ssh passphrase"
+#    private: yes
+#    confirm: yes
+
+  roles:
+    - ansible

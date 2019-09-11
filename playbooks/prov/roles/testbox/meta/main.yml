@@ -1,0 +1,5 @@
+---
+# file: roles/testbox/meta/main.yml
+
+dependencies:
+  - role: common

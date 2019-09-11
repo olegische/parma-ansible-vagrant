@@ -1,0 +1,54 @@
+---
+# file: roles/vagrant/tasks/main.yml
+
+- name: Include OS specific vars
+  include_vars: "{{ ansible_facts['os_family'] }}.yml"
+  tags:
+    - vagrant
+
+- name: Install Vagrant block
+  block:
+  - name: Get vagrant download page content
+    uri:
+      url: https://releases.hashicorp.com/vagrant
+      return_content: yes
+    register: vagrant_download_page
+
+  - name: Set vagrant version variable
+    set_fact:
+      vagrant_version: "{{ vagrant_download_page.content | regex_search('vagrant_([0-9]*\\.){2}([0-9])*') }}"
+
+  - name: Set vagrant package name variable
+    set_fact:
+      vagrant_package: "{{ [[vagrant_version, ansible_facts['machine']] | join('_'), vagrant_package_ext] | join('.') }}"
+
+  - name: Download vagrant package
+    get_url:
+      url: "https://releases.hashicorp.com/vagrant/{{ vagrant_version | regex_replace('vagrant_') }}/{{ vagrant_package }}"
+      dest: /usr/local/src
+      checksum: sha256:https://releases.hashicorp.com/vagrant/{{ vagrant_version | regex_replace('vagrant_') }}/{{ [vagrant_version, 'SHA256SUMS'] | join('_') }}
+
+  - include: "vagrant-install-{{ ansible_facts['os_family'] }}.yml"
+
+  - name: Remove downloaded vagrant package
+    file:
+      path: "/usr/local/src/{{ vagrant_package }}"
+      state: absent
+
+  - name: Install {{ role_name }} hypervisor packages
+    package:
+      name: "{{ hypervisor_packages }}"
+      state: latest
+
+  - name: Install {{ role_name }} packages
+    package:
+      name: "{{ vagrant_packages }}"
+      state: latest
+
+# END Install Vagrant block
+  tags:
+    - vagrant
+
+#- include: "bridge-config-{{ ansible_facts['os_family'] }}.yml"
+#  tags:
+#    - bridge

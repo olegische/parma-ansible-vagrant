@@ -1,0 +1,78 @@
+---
+# file: roles/jenkins/tasks/install-from-repo-Debian.yml
+
+- name: Install '{{ item.program }}' block
+  block:
+  - name: Set '{{ item.program }}' apt source list path variable
+    set_fact:
+      repo_list_path: "/etc/apt/sources.list.d/{{ item.program }}.list"
+
+  - name: Add '{{ item.program }}' repo
+    copy:
+      dest: "{{ repo_list_path }}"
+      content: |
+          {{ item.apt_repo }}
+    register: sources_edited
+    tags:
+      - addrepo
+
+  - name: Add '{{ item.program }}' apt key by id from a keyserver
+    apt_key:
+      keyserver: "{{ item.apt_key_server }}"
+      id: "{{ item.apt_key_id }}"
+    when: item.apt_key_id is defined
+    tags:
+      - addkey
+
+  - name: Add '{{ item.program }}' apt key by id from a keyserver
+    apt_key:
+      url: "{{ item.apt_key_url }}"
+      state: present
+    when: item.apt_key_url is defined
+    tags:
+      - addkey
+
+  - name: Update apt repositories
+    apt:
+      update_cache: yes
+    when: sources_edited is succeeded
+    register: repos_updated
+    tags:
+      - update
+
+  - name: Install Debian '{{ item.program }}' packages
+    package:
+      name: "{{ item.packages }}"
+      state: latest
+    when: repos_updated is succeeded
+    tags:
+      - install
+
+  - name: Delete '{{ item.program }}' apt key by id
+    apt_key:
+      id: "{{ item.apt_key_id }}"
+      state: absent
+    when: item.apt_key_id is defined
+    tags:
+      - delkey
+
+  - name: Delete '{{ item.program }}' repo
+    file:
+      path: "{{ repo_list_path }}"
+      state: absent
+    when: sources_edited is succeeded
+    register: sources_origin
+    tags:
+      - delrepo
+
+  - name: Update apt repositories.
+    apt:
+      update_cache: yes
+    when: ansible_facts['os_family'] == "Debian" and sources_origin is succeeded
+    register: repos_updated
+    tags:
+      - update
+# END Install block
+  tags:
+    - ansible
+    - jenkins

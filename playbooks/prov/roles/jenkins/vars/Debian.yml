@@ -1,0 +1,25 @@
+---
+# file: roles/jenkins/vars/Debian.yml
+
+jenkins_packages:
+  - default-jdk
+  - git
+
+jenkins_ansible_data:
+  program: "ansible"
+  apt_repo: "deb http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main"
+  apt_key_server: "keyserver.ubuntu.com"
+  apt_key_id: "93C4A3FD7BB9C367"
+  packages:
+    - ansible
+
+jenkins_data:
+  program: "jenkins"
+  apt_repo: "deb http://pkg.jenkins.io/debian-stable binary/"
+  apt_key_url: "https://pkg.jenkins.io/debian/jenkins-ci.org.key"
+  packages:
+    - jenkins
+
+jenkins_services:
+  - sshd
+  - jenkins

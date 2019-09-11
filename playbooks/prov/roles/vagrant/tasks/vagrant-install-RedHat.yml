@@ -1,0 +1,7 @@
+---
+# file: roles/vagrant/tasks/vagrant-install-RedHat.yml
+
+- name: Install vagrant rpm package from a local file
+  yum:
+    name: "/usr/local/src/{{ vagrant_package }}"
+    state: present

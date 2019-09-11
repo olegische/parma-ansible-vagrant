@@ -1,0 +1,17 @@
+---
+# file: roles/vagrant/vars/Debian.yml
+
+vagrant_package_ext: "deb"
+
+hypervisor_packages:
+ - qemu-kvm
+ - libvirt-daemon-system
+
+vagrant_packages:
+ - ruby-libvirt
+ - ruby-dev
+ - libvirt-dev
+ - libxslt-dev
+ - libxml2-dev
+ - zlib1g-dev
+# - bridge-utils

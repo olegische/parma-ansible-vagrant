@@ -1,0 +1,37 @@
+---
+# file: roles/common/tasks/hostfile.yml
+
+- name: Save remote hosts ip to localhosts {{ host_file_path }}
+  block:
+  - name: Set vagrant_host_ip fact
+    set_fact:
+      vagrant_host_ip:
+        name: "{{ inventory_hostname }}"
+        vip: "{{ ansible_facts['default_ipv4']['address'] }}"
+        pip: "{{ ansible_host }}"
+
+  - name: Save ip
+    local_action:
+      module: blockinfile
+      path: "{{ host_file_path }}"
+      block: |
+        {{ item.vip }} {{ item.name }}
+        {{ item.pip }} {{ item.name }}
+      marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.name }}"
+    with_items: 
+      - "{{ vagrant_host_ip }}"
+  when: inventory_hostname != 'localhost'
+  tags:
+    - localhostfile
+
+- name: Update remote /etc/host with staging group ip
+  blockinfile:
+    path: "{{ host_file_path }}"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    block: |
+      {% for host in groups['staging'] %}
+      {{ hostvars[host].ansible_host }} {{ hostvars[host].inventory_hostname }}
+      {% endfor %}
+  when: inventory_hostname != 'localhost'
+  tags:
+    - remotehostfile

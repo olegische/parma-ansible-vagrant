@@ -1,0 +1,9 @@
+---
+# file: roles/testbox/tasks/main.yml
+
+- name: Include vagrant user task
+  include: "{{ playbook_dir }}/tasks/vagrant-user.yml"
+  when: item.username == 'vagrant'
+  with_items: "{{ users }}"
+  tags:
+    - vagrant

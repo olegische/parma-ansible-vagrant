@@ -1,0 +1,20 @@
+---
+# file: tasks/file-permission.yml
+
+- name: Set {{ item[1] }} '{{ item[0] }}'
+  file:
+    path: "{{ item[0] }}"
+    state: "{{ item[1] }}"
+    owner: "{{ item[2].username }}"
+    group: "{{ item[2].group }}"
+    mode: "{{ item[2].file_mode }}"
+  when: item[1] == 'file'
+
+- name: Set {{ item[1] }} '{{ item[0] }}'
+  file:
+    path: "{{ item[0] }}"
+    state: "{{ item[1] }}"
+    owner: "{{ item[2].username }}"
+    group: "{{ item[2].group }}"
+    mode: "{{ item[2].dir_mode }}"
+  when: item[1] == 'directory'

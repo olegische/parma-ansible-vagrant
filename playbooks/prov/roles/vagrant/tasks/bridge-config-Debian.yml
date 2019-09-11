@@ -1,0 +1,17 @@
+---
+# file: roles/vagrant/tasks/bridge-config-Debian.yml
+
+- name: Configure network bridge
+  copy:
+    dest: "/etc/network/interfaces.d/{{ bridge_name }}"
+    content: |2
+      # {{ bridge_name }} interface
+      auto {{ bridge_name }}
+      iface {{ bridge_name }} inet dhcp
+          bridge_ports {{ ansible_facts['default_ipv4']['interface'] }}
+          bridge_waitport 0
+          bridge_fd 0
+  when: ansible_facts['default_ipv4']['interface'] != bridge_name
+  notify: Debian network
+  tags:
+    - bridge

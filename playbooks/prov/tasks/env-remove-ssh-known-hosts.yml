@@ -1,0 +1,18 @@
+---
+# file: tasks/env-remove-ssh-known-hosts.yml
+
+- name: Remove '{{ item }}' from ansible user ssh known hosts
+  command: "ssh-keygen -f /home/ansible/.ssh/known_hosts -R {{ item }}"
+  become: yes
+  become_user: ansible
+  register: ssh_remove_host
+  changed_when: "'Host item found' in ssh_remove_host.stdout"
+
+#- debug:
+#    msg: "{{ ssh_remove_host }}"
+
+# Host vm-jenkins not found in /home/ansible/.ssh/known_hosts
+
+# Host vm-jenkins found: line 1
+#/home/ansible/.ssh/known_hosts updated.
+#Original contents retained as /home/ansible/.ssh/known_hosts.old

@@ -1,0 +1,5 @@
+---
+# file: roles/gitlab/meta/main.yml
+
+dependencies:
+  - role: common

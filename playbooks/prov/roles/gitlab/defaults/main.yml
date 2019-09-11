@@ -1,0 +1,67 @@
+---
+# file: roles/gitlab/defaults/main.yml
+
+# Gitlab vault owner
+gitlab_vault_user:
+  username: 'ansible'
+  group: 'ansible'
+  file_mode: '0400'
+  dir_mode: '0700'
+
+# Gitlab service user
+gitlab_user:
+  username: 'root'
+  group: 'root'
+  file_mode: '0600'
+  dir_mode: '0700'
+
+# General config
+gitlab_edition: 'gitlab-ce'
+gitlab_config_template: 'gitlab.rb.j2'
+gitlab_vault_dir: '/etc/gitlab'
+gitlab_vault_passwd_dir: "{{ gitlab_vault_dir }}/.pass"
+gitlab_http_port: 80
+gitlab_ports:
+  - "{{ gitlab_http_port }}"
+  - 443
+gitlab_ports_alias:
+  - http
+  - https
+
+# SSL Self-signed Certificate Configuration
+gitlab_create_self_signed_cert: true
+gitlab_self_signed_cert_subj: "/C=RU/L=Moscow/CN={{ inventory_hostname }}"
+gitlab_ssl_dir: '/etc/gitlab/ssl'
+gitlab_ssl_certificate: "{{ gitlab_ssl_dir }}/gitlab-cert.pem"
+gitlab_ssl_certificate_key: "{{ gitlab_ssl_dir }}/gitlab-key.pem"
+
+# GitLab URL
+gitlab_external_url: "https://{{ inventory_hostname }}"
+# gitlab_time_zone: "UTC"
+
+# Email Settings
+gitlab_email_enabled: 'false'
+gitlab_email_from: 'example@example.com'
+gitlab_email_display_name: 'Example'
+gitlab_email_reply_to: 'noreply@example.com'
+
+# Default Theme
+gitlab_default_theme: "2"
+
+# Backup Settings
+gitlab_manage_backup_path: 'true'
+gitlab_backup_path: '/var/opt/gitlab/backups'
+gitlab_backup_archive_permissions: '0644'
+gitlab_backup_pg_schema: 'public'
+gitlab_backup_keep_time: 604800
+
+# Git repositories
+gitlab_git_data_dirs: '/var/opt/gitlab/git-repos'
+
+# GitLab NGINX
+gitlab_nginx_enable: 'true'
+gitlab_redirect_http_to_https: 'true'
+gitlab_client_max_body_size: '250m'
+gitlab_redirect_http_to_https_port: "{{ gitlab_http_port }}"
+gitlab_ssl_protocols: 'TLSv1.2 TLSv1.3'
+gitlab_ssl_session_timeout: '24h'

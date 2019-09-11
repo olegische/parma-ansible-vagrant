@@ -1,0 +1,9 @@
+# Override built-in defaults
+Defaults        syslog=auth, log_year, logfile=/var/log/sudo
+{% for user in users %}
+{% if user.sudo == 'nopass' %}
+Defaults:{{ user.username }}        !authenticate
+{% elif user.sudo == 'pass' %}
+Defaults:{{ user.username }}        authenticate
+{% endif %}
+{% endfor %}

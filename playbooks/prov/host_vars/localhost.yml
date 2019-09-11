@@ -1,0 +1,6 @@
+---
+# file: inventories/provision/host_vars/localhost.yml
+
+ansible_connection: local
+ansible_become: yes
+ansible_become_method: sudo

@@ -1,0 +1,20 @@
+---
+# file: vagrant-cnfg-remove.yml
+
+- name: Remove vagrant environment
+  hosts: vmservers
+
+  tasks:
+  - name: Remove box
+    command: "vagrant box remove {{ item }}"
+    with_items: "{{ vagrant_boxes }}"
+    failed_when: false
+    tags:
+      - vagrantbox
+
+  - name: Uninstall vagrant plugins
+    command: "vagrant plugin uninstall {{ item }}"
+    with_items: "{{ vagrant_plugins }}"
+    failed_when: false
+    tags:
+      - plugins

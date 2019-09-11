@@ -1,0 +1,7 @@
+---
+# file: roles/gitlab/vars/main.yml
+
+gitlab_python_packages:
+  - python-pip
+  - python-virtualenv
+  - python-setuptools

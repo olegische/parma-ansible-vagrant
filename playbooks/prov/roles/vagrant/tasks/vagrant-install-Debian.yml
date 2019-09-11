@@ -1,0 +1,6 @@
+---
+# file: roles/vagrant/tasks/vagrant-install-Debian.yml
+
+- name: Install vagrant deb package from local file
+  apt:
+    deb: "/usr/local/src/{{ vagrant_package }}"

@@ -1,0 +1,14 @@
+---
+# file: roles/vagrant/vars/RedHat.yml
+
+vagrant_package_ext: "rpm"
+
+hypervisor_packages:
+ - libvirt
+ - qemu-kvm
+
+vagrant_packages:
+ - libvirt-devel
+ - ruby-devel
+ - gcc
+# - bridge-utils

@@ -1,0 +1,4 @@
+---
+# file: roles/vagrant/defaults/main.yml
+
+vagrant_bridge_name: "br0"

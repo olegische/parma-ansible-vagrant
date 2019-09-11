@@ -1,0 +1,16 @@
+---
+# file: roles/jenkins/tasks/jenkins-firewall-RedHat.yml
+
+- name: Open port {{ jenkins_port }} (jenkins) with firewalld
+  firewalld:
+    port: "{{ jenkins_port }}/tcp"
+    permanent: yes
+    zone: public
+    state: enabled
+  tags:
+    - firewall
+
+- name: Reload firewalld
+  command: firewall-cmd --reload
+  tags:
+    - firewall

@@ -1,0 +1,8 @@
+---
+# file: ciservers.yml
+
+- name: Configure CI servers
+  hosts: ciservers
+
+  roles:
+    - jenkins

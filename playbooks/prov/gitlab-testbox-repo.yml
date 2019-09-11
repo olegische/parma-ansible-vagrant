@@ -1,0 +1,52 @@
+---
+# file: gitlab-testbox-repo.yml
+
+- name: Configure gitlab for test task
+  hosts: vm-gitlab
+
+- name: Include gitlab vars.
+  include_vars:
+    file: "{{ palybook_dir }}/roles/gitlab/defaults/main.yml"
+
+  vars:
+    gitlab_users:
+    - username: john
+      name: John Doe
+      group: parma-task
+      access_level: developer
+      email: john@{{ inventory_hostname }}
+      isadmin: no
+      sshkey_name: John-SSH
+      sshkey_file: ''
+      validate_certs: no
+    gitlab_groups:
+    - name: parma-task
+      path: parma-task
+      description: Group for Parma task
+      visibility: private
+
+  vars_prompt:
+  - name: "gitlab_admin_access_token"
+    prompt: "Enter gitlab admin token"
+    private: yes
+    confirm: yes
+
+  tasks:
+  - name: Create gitlab groups
+    gitlab_group:
+      api_url: "{{ gitlab_external_url }}"
+      validate_certs: false
+      api_token: "{{ gitlab_admin_access_token }}"
+      name: "{{ item.name }}"
+      path: "{{ item.path }}"
+      description: "{{ item.description }}"
+      visibility: "{{ item.visibility }}"
+      state: present
+    with_items: "{{ gitlab_groups }}"
+    tags:
+      - gitlabgroup
+
+#    include: tasks/gitlab-create-user.yml
+#    with_items: "{{ gitlab_users }}"
+#    tags:
+#      - gitlabuser

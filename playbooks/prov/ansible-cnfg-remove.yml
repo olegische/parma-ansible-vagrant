@@ -1,0 +1,43 @@
+---
+# file: ansible-cnfg-remove.yml
+
+- name: Remove ansible configuration
+  hosts: cmservers
+
+  tasks:
+  - name: Include default variables
+    include_vars:
+      dir: "{{ playbook_dir }}/roles/ansible/defaults"
+      extensions:
+        - yml
+
+  - name: Include OS specific variables
+    include_vars:
+      dir: "{{ playbook_dir }}/roles/ansible/vars"
+      files_matching: "{{ ansible_facts['os_family'] }}.yml"
+      extensions:
+        - yml
+
+  - name: Remove vault id dir
+    file:
+      path: "{{ vault_id_path }}"
+      state: absent
+    tags:
+      - vaultid
+
+  - name: Remove password vault dir
+    file:
+      path: "{{ vault_password_path }}"
+      state: absent
+    tags:
+      - vaultid
+
+  - name: Remove ansible service user
+    user:
+      name: "{{ item.username }}"
+      state: absent
+      remove: true
+    with_items: 
+      - "{{ ansible_user_srv }}"
+    tags:
+      - users

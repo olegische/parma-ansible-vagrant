@@ -1,0 +1,17 @@
+---
+# file: roles/gitlab/vars/RedHat.yml
+
+gitlab_package_ext: "rpm"
+
+gitlab_packages:
+  - epel-release
+  - postfix
+  - ca-certificates
+  - curl
+  - openssh-server
+  - policycoreutils-python
+
+gitlab_services:
+  - firewalld
+  - postfix
+  - sshd

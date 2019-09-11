@@ -1,0 +1,12 @@
+---
+# file: roles/jenkins/tasks/jenkins-firewall-Debian.yml
+
+- name: Allow new SYN on TCP port {{ jenkins_port }} (jenkins).
+  iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: "{{ jenkins_port }}"
+    ctstate: NEW
+    syn: match
+    jump: ACCEPT
+    comment: Accept new Jenkins connections.

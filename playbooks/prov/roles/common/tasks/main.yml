@@ -1,0 +1,48 @@
+---
+# file: roles/common/tasks/main.yml
+
+- name: Set host's timezone
+  timezone:
+    name: "{{ site_timezone }}"
+  tags:
+    - timezone
+
+- name: Install {{ role_name }} packages
+  package:
+    name: "{{ packages_common }}"
+    state: latest
+  tags:
+    - install
+
+- include: "{{ playbook_dir }}/tasks/users.yml"
+  with_items: "{{ users }}"
+  tags:
+    - users
+
+- include: sudo.yml
+  with_items: "{{ sudoers_dir_files }}"
+  tags:
+    - sudo
+
+- name: Configure sshd block
+  block:
+  - name: Configure sshd
+    copy:
+      src: sshd_config.txt
+      dest: "{{ sshd_config_file }}"
+      owner: root
+      group: root
+      backup: yes
+    notify: 
+      - restart sshd
+
+  - name: Force all notified handlers
+    meta: flush_handlers
+# END Configure sshd block
+  when: inventory_hostname != 'localhost'
+  tags:
+    - sshd
+
+- include: hostfile.yml
+  tags:
+    - hostfile

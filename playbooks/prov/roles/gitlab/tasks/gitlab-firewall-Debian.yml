@@ -1,0 +1,13 @@
+---
+# file: roles/gitlab/tasks/gitlab-firewall-Debian.yml
+
+- name: Allow new incoming SYN packets on TCP ports 80 and 443 (gitlab).
+  iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: "{{ item }}"
+    ctstate: NEW
+    syn: match
+    jump: ACCEPT
+    comment: Accept new gitlab "{{ item }}" port connections.
+  with_items: "{{ gitlab_ports }}"

@@ -1,0 +1,6 @@
+---
+# file: roles/ansible/defaults/main.yml
+
+ansiblerole_packages:
+  - openssl
+  - openssh-client

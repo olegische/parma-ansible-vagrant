@@ -1,0 +1,7 @@
+---
+#file: roles/jenkins/tasks/jenkins-install-Debian.yml
+
+- include: install-from-repo-Debian.yml
+  with_items: "{{ outer_item }}"
+  tags:
+    - jenkins

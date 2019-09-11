@@ -1,0 +1,4 @@
+---
+# file: group_vars/ciservers.yml
+
+ssh_passphrase: ''

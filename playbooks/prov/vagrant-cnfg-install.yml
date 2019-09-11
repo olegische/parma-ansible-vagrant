@@ -1,0 +1,29 @@
+---
+# file: vagrant-cnfg-install.yml
+
+- name: Create vagrant environment
+  hosts: vmservers
+
+  tasks:
+  - name: Install vagrant plugins
+    command: "vagrant plugin install {{ item }}"
+    with_items: "{{ vagrant_plugins }}"
+    tags:
+      - plugins
+
+  - name: Download box
+    command: "vagrant box add {{ item }} --provider=libvirt"
+    with_items: "{{ vagrant_boxes }}"
+    failed_when: false
+    tags:
+      - vagrantbox
+
+#  - name: Restart libvirt
+#    service:
+#      name: libvirtd
+#      status: restarted
+
+#  - name: Create VMs from Vagrantfile
+#    command: vagrant up --provider=libvirt
+#    tags:
+#      - vagrantup

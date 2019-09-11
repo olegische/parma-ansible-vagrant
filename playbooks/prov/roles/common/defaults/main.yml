@@ -1,0 +1,14 @@
+---
+# file: roles/common/defaults/main.yml
+
+packages_common:
+  - sudo
+  - openssl
+
+sudoers_file_path: /etc/sudoers
+sudoers_dir_path: /etc/sudoers.d
+sudoers_dir_files:
+  - 00-common
+  - 50-defaults
+
+sshd_config_file: /etc/ssh/sshd_config

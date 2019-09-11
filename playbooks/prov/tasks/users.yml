@@ -1,0 +1,102 @@
+---
+# file: roles/common/tasks/users.yml
+
+- name: User config
+  block:
+  - name: Ensure all user's groups exists
+    group:
+      name: "{{ inner_item }}"
+      state: present
+    when: item.groups is defined
+    with_items: "{{ item.groups }}"
+    loop_control:
+      loop_var: inner_item
+
+  - name: Generate '{{ item.username }}' user password
+    shell: "{{ generate_password_command }}"
+    register: user_passwd_reg
+    no_log: true
+
+  - name: Set '{{ item.username }}' user password variable
+    set_fact:
+      user_passwd: "{{ user_passwd_reg.stdout }}"
+      cacheable: no
+    when: user_passwd_reg is succeeded
+    register: password_fact_set
+    no_log: true
+      
+  - name: Add user '{{ item.username }}'
+    user:
+      name: "{{ item.username }}"
+      comment: "{{ item.gecos }}"
+      shell: "{{ item.shell }}"
+      create_home: "{{ item.home }}"
+      password: "{{ user_passwd | password_hash('sha512') }}"
+      update_password: "{{ item.update_pass }}"
+    when: password_fact_set is succeeded
+    no_log: true
+
+  - name: Add user '{{ item.username }}' to groups
+    user:
+      name: "{{ item.username }}"
+      groups: "{{ item.groups | join(',') }}"
+      append: "{{ item.groups_append }}"
+    when: item.groups is defined
+
+  - name: Set authorized keys for remote {{ ansible_user_srv.username }} user
+    authorized_key:
+      user: "{{ item.username }}"
+      state: present
+      key: "{{ lookup('file', '/home/{{ ansible_user_srv.username }}/.ssh/id_rsa.pub', errors='ignore') }}"
+    ignore_errors: yes
+    when: item.username == ansible_user_srv.username
+    tags:
+      - ansible
+
+  - name: Save client's password
+    block:
+    - name: Set '{{ item.username }}' user password file variable
+      set_fact:
+        user_passwd_path: "{{ vault_password_path }}/{{ inventory_hostname }}.{{ item.username }}"
+        cacheable: no
+
+    - name: Save remote '{{ item.username }}' user password
+      copy:
+        dest: "{{ user_passwd_path }}"
+        content: |
+          {{ user_passwd }}
+      no_log: true
+
+    - name: Encrypt local '{{ item.username }}' user password file
+      command: "ansible-vault encrypt {{ user_passwd_path }}"
+      when: inventory_hostname == 'localhost'
+      ignore_errors: yes
+
+    - name: Encrypt remote '{{ item.username }}' user password file
+      command: "ansible-vault encrypt {{ user_passwd_path }} --vault-id {{ vault_id_common_file }}"
+      when: inventory_hostname != 'localhost'
+
+    - include: "{{ playbook_dir }}/tasks/file-permission.yml"
+      with_together:
+        - "{{ user_passwd_path }}"
+        - 'file'
+        - "{{ vault_user }}"
+
+#    - name: Set permission to '{{ item.username }}' user password file
+#      file:
+#        path: "{{ user_passwd_path }}"
+#        owner: "{{ vault_user.username }}"
+#        group: "{{ vault_user.own_group }}"
+#        mode: "{{ vault_user.file_mode }}"
+# END block Save client's password
+    delegate_to: localhost
+    tags:
+      - ansible
+# END block User config
+  when: item.username != 'root'
+  tags:
+    - users
+
+- debug:
+    msg: "You can't config root user with this playbook"
+  when: item.username == 'root'

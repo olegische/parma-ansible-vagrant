@@ -1,0 +1,14 @@
+---
+# file: roles/gitlab/vars/Debian.yml
+
+gitlab_package_ext: "deb"
+
+gitlab_packages:
+  - postfix
+  - ca-certificates
+  - curl
+  - openssh-server
+
+gitlab_services:
+  - postfix
+  - sshd

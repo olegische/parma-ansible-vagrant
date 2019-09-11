@@ -1,0 +1,82 @@
+---
+# file: roles/jenkins/tasks/main.yml
+
+- name: Include OS specific vars
+  include_vars: "{{ ansible_facts['os_family'] }}.yml"
+  tags:
+    - ansible
+    - jenkins
+
+- include: "ansible-install-{{ ansible_facts['os_family'] }}.yml"
+  with_items: 
+    - "{{ jenkins_ansible_data }}"
+  loop_control:
+    loop_var: outer_item
+  tags:
+    - ansible
+
+- name: Install Jenkins block
+  block:
+  - name: Install {{ role_name }} packages
+    package:
+      name: "{{ jenkins_packages }}"
+      state: latest
+
+  - include: "jenkins-install-{{ ansible_facts['os_family'] }}.yml"
+    with_items: 
+      - "{{ jenkins_data }}"
+    loop_control:
+      loop_var: outer_item
+
+  - name: Ensure services is running and starts on boot
+    service:
+      name: "{{ item }}"
+      state: started
+      enabled: true
+    with_items: "{{ jenkins_services }}"
+# END Install Jenkins block
+  tags:
+    - jenkins
+
+- include: "jenkins-firewall-{{ ansible_facts['os_family'] }}.yml"
+  tags:
+    - firewall
+
+- include: "{{ playbook_dir }}/tasks/file-permission.yml"
+  with_together:
+    - "{{ jenkins_vault_passwd_dir }}"
+    - 'directory'
+    - "{{ jenkins_vault_user }}"
+  delegate_to: localhost
+  tags:
+    - vaultdir
+
+#- name: Create jenkins password vault dir
+#  local_action:
+#    module: file
+#    path: "{{ jenkins_vault_passwd_dir }}"
+#    state: directory
+#    owner: "{{ jenkins_service_user.username }}"
+#    group: "{{ jenkins_service_user.own_group }}"
+#  tags:
+#    - vaultdir
+
+# Wait for initial admin password file will be created.
+- name: Pause playbook for jenkins readiness
+  pause:
+    seconds: 10
+
+- name: Save jenkins admin initial password. Create and save jenkins root password.
+  include: jenkins-users.yml
+  with_items: 
+    - { username: "admin" }
+    - "{{ jenkins_service_admin }}"
+  tags:
+    - jenkinsadmin
+
+- name: Include vagrant user task
+  include: "{{ playbook_dir }}/tasks/vagrant-user.yml"
+  when: item.username == 'vagrant'
+  with_items: "{{ users }}"
+  tags:
+    - vagrant

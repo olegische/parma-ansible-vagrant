@@ -1,0 +1,26 @@
+---
+# file: roles/jenkins/vars/RedHat.yml
+
+jenkins_packages:
+  - java
+  - git
+
+jenkins_ansible_data:
+  program: "ansible"
+  packages:
+    - epel-release
+    - ansible
+
+jenkins_data:
+  program: "jenkins"
+  yum_repo_description: "Jenkins-stable"
+  yum_repo: "http://pkg.jenkins-ci.org/redhat-stable"
+  yum_gpg: true
+  yum_gpg_key: "https://jenkins-ci.org/redhat/jenkins-ci.org.key"
+  packages:
+    - jenkins
+
+jenkins_services:
+  - sshd
+  - firewalld
+  - jenkins

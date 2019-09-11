@@ -1,0 +1,7 @@
+---
+# file: roles/gitlab/handlers/main.yml
+
+- name: reconfigure gitlab
+  command: gitlab-ctl reconfigure
+  register: gitlab_reconfigure
+  failed_when: gitlab_reconfigure.rc != 0

@@ -1,0 +1,50 @@
+---
+# file: inventories/provision/group_vars/all.yml
+
+#ansible_become: yes
+#ansible_become_method: sudo
+#ansible_become_pass: "{{ ansible_user_password }}"
+
+ansible_user_srv:
+  username: 'ansible'
+  group: 'ansible'
+  file_mode: '0400'
+  dir_mode: '0700'
+  groups:
+    - admin
+  groups_append: yes
+  sudo: 'pass'
+  gecos: 'Ansible service'
+  shell: '/bin/bash'
+  home: yes
+  update_pass: always
+
+users:
+  - "{{ ansible_user_srv }}"
+
+# Vault config
+vault_user:
+  username: 'ansible'
+  group: 'ansible'
+  file_mode: '0400'
+  dir_mode: '0700'
+
+vault_password_path: "/etc/{{ vault_user.username }}/.pass"
+vault_id_path: "/home/{{ vault_user.username }}/.vault_pass"
+vault_id_labels:
+  - prov
+  - dev
+  - stage
+  - prod
+vault_id_common_file: "{{ vault_id_labels[0] }}@{{ vault_id_path }}/{{ vault_id_labels[0] }}_pass"
+
+# General config
+site_timezone: 'Asia/Yekaterinburg'
+generate_password_command: 'openssl rand -base64 48'
+host_file_path: '/etc/hosts'
+
+# New generated ssh keys config
+host_ssh_key_bits: 4096
+host_ssh_key_type: 'rsa'
+host_ssh_key_file: ".ssh/id_{{ host_ssh_key_type }}"
+host_ssh_socket_dir: '.ssh/cm_socket'

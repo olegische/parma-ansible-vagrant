@@ -1,0 +1,17 @@
+---
+# file: group_vars/staging.yml
+
+vagrant_service_user:
+    username: vagrant
+    groups:
+      - admin
+    groups_append: yes
+    sudo: pass
+    gecos: Vagrant service
+    shell: /bin/bash
+    home: yes
+    update_pass: always
+
+users:
+  - "{{ ansible_user_srv }}"
+  - "{{ vagrant_service_user }}"

@@ -1,0 +1,7 @@
+---
+# file: create_ci.yml
+
+- name: Create CI
+  hosts: staging
+
+  tasks:

@@ -1,0 +1,76 @@
+---
+# file: playbooks-prov/roles/jenkins/tasks/jenkins-users.yml
+
+- name: Jenkins user config
+  block:
+  - name: Create jenkins {{ item.username }} user password
+    shell: "{{ generate_password_command }}"
+    register: jenkins_user_passwd_reg
+    no_log: true
+
+  - name: Set jenkins {{ item.username }} user password variable
+    set_fact:
+      jenkins_user_password: "{{ jenkins_user_passwd_reg.stdout | regex_replace('[^0-9a-zA-Z]') }}"
+      cacheable: no
+    when: jenkins_user_passwd_reg is succeeded
+    no_log: true
+
+  - name: Read remote jenkins initial password file
+    slurp:
+      src: "{{ jenkins_init_password_file }}"
+    register: jenkins_slurp
+
+  - name: Set jenkins init admin password file variable
+    set_fact:
+      jenkins_init_admin_passwd: "{{ jenkins_slurp['content'] | b64decode }}"
+      cacheable: no
+
+  - name: Save jenkins {{ item.username }} user password
+    block:
+    - name: Set jenkins {{ item.username }} user password file variable
+      set_fact:
+        jenkins_user_passwd_path: "{{ jenkins_vault_passwd_dir }}/{{ inventory_hostname }}.{{ item.username }}"
+        cacheable: no
+
+    - name: Check initial config
+      stat:
+        path: "{{ jenkins_user_passwd_path }}"
+      register: jenkins_stat_result
+      when: item.username == 'admin'
+
+    - name: Change jenkins {{ item.username }} user password variable
+      set_fact:
+        jenkins_user_password: "{{ jenkins_init_admin_passwd }}"
+        cacheable: no
+      when: item.username == 'admin' and
+            jenkins_stat_result.stat.exists == false
+      no_log: true
+
+    - name: Save jenkins {{ item.username }} user password
+      copy:
+        dest: "{{ jenkins_user_passwd_path }}"
+        content: |
+          {{ jenkins_user_password }}
+      no_log: true
+
+    - name: Encrypt jenkins {{ item.username }} user password file
+      command: "ansible-vault encrypt {{ jenkins_user_passwd_path }} --vault-id {{ vault_id_labels[0] }}@{{ vault_id_path }}/{{ vault_id_labels[0] }}_pass"
+
+    - include: "{{ playbook_dir }}/tasks/file-permission.yml"
+      with_together:
+        - "{{ jenkins_user_passwd_path }}"
+        - 'file'
+        - "{{ jenkins_vault_user }}"
+
+#    - name: Set permission to jenkins '{{ item.username }}' user password file
+#      file:
+#        path: "{{ jenkins_user_passwd_path }}"
+#        owner: "{{ ansible_user_srv.username }}"
+#        group: "{{ ansible_user_srv.own_group }}"
+#        mode: "{{ ansible_user_srv.file_mode }}"
+# END block Save jenkins user password
+    delegate_to: localhost
+# END block Jenkins user config
+  tags:
+    - jenkinsuser
+    - jenkinsadmin

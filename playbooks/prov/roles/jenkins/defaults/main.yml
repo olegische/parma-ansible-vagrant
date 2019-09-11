@@ -1,0 +1,52 @@
+---
+# file: roles/jenkins/defaults/main.yml
+
+# Jenkins vault owner
+jenkins_vault_user:
+  username: 'ansible'
+  group: 'ansible'
+  file_mode: '0400'
+  dir_mode: '0700'
+
+# Jenkins service user
+jenkins_user:
+  username: 'jenkins'
+  group: 'jenkins'
+  file_mode: '0400'
+  dir_mode: '0700'
+  sudo: 'pass'
+  gecos: 'Jenkins service'
+  shell: '/bin/bash'
+  home: yes
+  update_pass: always
+
+users:
+  - "{{ ansible_user_srv }}"
+  - "{{ jenkins_user }}"
+
+# Sysconfig options
+jenkins_home: '/var/lib/jenkins'
+jenkins_java_options: '-Djava.awt.headless=true'
+# Adding -Djenkins.install.runSetupWizard=false isn't a good option anymore 
+# if your intention is just to skip plugin installation (if it ever was), 
+# because it bypasses the entire setup wizard, meaning things like adding an 
+# admin user and configuring the base URL are also skipped.
+#jenkins_java_options_extra: ' -Djenkins.install.runSetupWizard=false'
+jenkins_java_options_extra: ''
+jenkins_port: 8080
+jenkins_debug_level: 5
+jenkins_enable_access_log: 'no'
+jenkins_handler_max: 100
+jenkins_handler_idle: 20
+
+# General config
+jenkins_vault_dir: '/etc/jenkins'
+jenkins_vault_passwd_dir: "{{ jenkins_vault_dir }}/.pass"
+jenkins_init_password_file: "{{ jenkins_home }}/secrets/initialAdminPassword"
+
+# Jenkins URL
+jenkins_external_url: "http://{{ inventory_hostname }}:{{ jenkins_port }}"
+
+# Jenkins service administrator
+jenkins_service_admin:
+  username: 'root'

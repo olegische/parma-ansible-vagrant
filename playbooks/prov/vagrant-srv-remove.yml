@@ -1,0 +1,52 @@
+---
+# file: vagrant-srv-remove.yml
+
+- name: Remove vagrant
+  hosts: vmservers
+
+  tasks:
+  - name: Include default variables
+    include_vars:
+      dir: "{{ playbook_dir }}/roles/vagrant/defaults"
+      extensions:
+        - yml
+
+  - name: Include OS specific variables
+    include_vars:
+      dir: "{{ playbook_dir }}/roles/vagrant/vars"
+      files_matching: "{{ ansible_facts['os_family'] }}.yml"
+      extensions:
+        - yml
+
+  - name: Uninstall vagrant packages
+    package:
+      name: "{{ vagrant_packages }}"
+      state: absent
+    tags:
+      - vagrant
+
+  - name: Uninstall hypervisor packages
+    package:
+      name: "{{ hypervisor_packages }}"
+      state: absent
+    tags:
+      - libvirt
+
+  - name: Uninstall vagrant
+    package:
+      name: vagrant
+      state: absent
+    tags:
+      - vagrant
+
+  - name: Remove vagrant user dir
+    file:
+      path: "/home/{{ ansible_user }}/.vagrant.d"
+      state: absent
+    when: ansible_user != 'root'
+
+  - name: Remove vagrant root dir
+    file:
+      path: "/{{ ansible_user }}/.vagrant.d"
+      state: absent
+    when: ansible_user == 'root'

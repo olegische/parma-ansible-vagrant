@@ -1,0 +1,8 @@
+---
+# file: vagrant-srv-install.yml
+
+- name: Install vagrant
+  hosts: vmservers
+
+  roles:
+    - vagrant

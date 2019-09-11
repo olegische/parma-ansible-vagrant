@@ -1,0 +1,26 @@
+---
+# file: environment-destroy.yml
+
+- name: Destroy environment
+  hosts: cmservers
+
+  vars:
+    srv_groups:
+      - ciservers
+      - gitservers
+      - testweb
+
+  vars_files:
+    - "{{ playbook_dir }}/roles/jenkins/defaults/main.yml"
+    - "{{ playbook_dir }}/roles/gitlab/defaults/main.yml"
+
+  tasks:
+  - include: "{{ playbook_dir }}/tasks/environment-tasks.yml"
+    with_items: "{{ srv_groups }}"
+    loop_control:
+      loop_var: playbook_item
+    tags:
+      - hostfile
+      - password
+      - vaultpassword
+      - knownhosts

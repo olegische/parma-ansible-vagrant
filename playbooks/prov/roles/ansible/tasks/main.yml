@@ -1,0 +1,71 @@
+---
+# file: roles/ansible/tasks/main.yml
+
+- name: Install {{ role_name }} packages
+  package:
+    name: "{{ ansiblerole_packages }}"
+    state: latest
+  tags:
+    - install
+
+- name: Create password vault dir
+  file:
+    path: "{{ vault_password_path }}"
+    state: directory
+    owner: 'root'
+    group: 'root'
+  tags:
+    - vaultdir
+
+- include: "{{ playbook_dir }}/tasks/users.yml"
+  with_items: "{{ users }}"
+  tags:
+    - users
+
+- name: Chmod password vault dir
+  include: "{{ playbook_dir }}/tasks/file-permission.yml"
+  with_together:
+    - "{{ vault_password_path }}"
+    - 'directory'
+    - "{{ vault_user }}"
+  tags:
+    - vaultdir
+
+#- name: Chmod password vault dir
+#  file:
+#    path: "{{ vault_password_path }}"
+#    state: directory
+#    owner: "{{ ansible_user_srv.username }}"
+#    group: "{{ ansible_user_srv.group }}"
+#    mode: "{{ ansible_user_srv.dir_mode }}"
+#  tags:
+#    - ansible
+
+- include: "{{ playbook_dir }}/tasks/ssh-keys.yml"
+  with_items: "{{ users }}"
+  tags:
+    - sshkeys
+
+- name: Create vault id dir
+  include: "{{ playbook_dir }}/tasks/file-permission.yml"
+  with_together:
+    - "{{ vault_id_path }}"
+    - 'directory'
+    - "{{ vault_user }}"
+  tags:
+    - vaultid
+
+#- name: Create vault id dir
+#  file:
+#    path: "{{ vault_id_path }}"
+#    state: directory
+#    owner: "{{ ansible_user_srv.username }}"
+#    group: "{{ ansible_user_srv.group }}"
+#    mode: "{{ ansible_user_srv.dir_mode }}"
+#  tags:
+#    - vaultid
+
+- include: vault-pass.yml
+  with_items: "{{ vault_id_labels }}"
+  tags:
+    - vaultid

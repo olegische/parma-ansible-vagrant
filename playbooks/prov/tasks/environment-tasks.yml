@@ -1,0 +1,33 @@
+---
+# file: tasks/environment-tasks.yml
+
+- name: Remove hosts file block
+  blockinfile:
+    path: "{{ host_file_path }}"
+    block: ""
+    marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item }}"
+  with_items: "{{ groups[playbook_item] }}"
+  tags:
+    - hostfile
+
+- include: env-delete-password-files.yml
+  with_items: "{{ groups[playbook_item] }}"
+  loop_control:
+    loop_var: outer_item
+  tags:
+    - password
+
+- name: Delete gitlab password vault dir
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ gitlab_vault_dir }}"
+    - "{{ jenkins_vault_dir }}"
+  tags:
+    - vaultpassword
+
+- include: env-remove-ssh-known-hosts.yml
+  with_items: "{{ groups[playbook_item] }}"
+  tags:
+    - knownhosts

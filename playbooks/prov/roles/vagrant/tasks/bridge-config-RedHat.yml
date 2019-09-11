@@ -1,0 +1,31 @@
+---
+# file: roles/vagrant/tasks/bridge-config-RedHat.yml
+
+- name: Configure network bridge
+  copy:
+    dest: "/etc/sysconfig/network-scripts/ifcfg-{{ bridge_name }}"
+    content: |
+      DEVICE={{ bridge_name }}
+      TYPE=Bridge
+      STP=on
+      ONBOOT=yes
+      BOOTPROTO=none
+      NM_CONTROLLED=no
+  when: ansible_facts['default_ipv4']['interface'] != bridge_name
+  notify: RedHat network
+  tags:
+    - bridge
+
+- name: Configure Ethernet interface
+  copy:
+    dest: /etc/sysconfig/network-scripts/ifcfg-{{ ansible_facts['default_ipv4']['interface'] }}
+    content: |
+      DEVICE={{ ansible_facts['default_ipv4']['interface'] }}
+      HWADDR={{ ansible_facts['default_ipv4']['macaddress'] }}
+      ONBOOT=yes
+      BRIDGE={{ bridge_name }}
+      NM_CONTROLLED=no
+  when: ansible_facts['default_ipv4']['interface'] != bridge_name
+  notify: RedHat network
+  tags:
+    - bridge

@@ -1,0 +1,8 @@
+---
+# file: group_vars/vmservers.yml
+
+vagrant_boxes:
+  - "centos/7"
+vagrant_plugins:
+  - vagrant-libvirt
+#  - vagrant-mutate

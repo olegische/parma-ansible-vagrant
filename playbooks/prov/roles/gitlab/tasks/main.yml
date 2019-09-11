@@ -1,0 +1,168 @@
+---
+# file: roles/gitlab/tasks/main.yml
+
+- name: Include OS specific vars
+  include_vars: "{{ ansible_facts['os_family'] }}.yml"
+  tags:
+    - gitlab
+
+- name: Install Gitlab block
+  block:
+  - name: Install {{ role_name }} packages
+    package:
+      name: "{{ gitlab_packages }}"
+      state: latest
+
+  - name: Install {{ role_name }} python packages
+    package:
+      name: "{{ gitlab_python_packages }}"
+      state: latest
+
+  - name: Ensure gitlab services is running and starts on boot
+    service:
+      name: "{{ item }}"
+      state: started
+      enabled: true
+    with_items: "{{ gitlab_services }}"
+
+  - name: Get GitLab repository script
+    get_url:
+      url: "https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.{{ gitlab_package_ext }}.sh"
+      dest: /tmp/gitlab.script.sh
+      mode: 0777
+
+  - name: Run GitLab repository script
+    command: /tmp/gitlab.script.sh
+
+  - name: Install GitLab CE
+    package:
+      name: "{{ gitlab_edition }}"
+      state: present
+
+  - name: Remove GitLab repository script
+    file:
+      path: /tmp/gitlab.script.sh
+      state: absent
+
+  - name: Create gitlab password vault dir
+    local_action:
+      module: file
+      path: "{{ gitlab_vault_passwd_dir }}"
+      state: directory
+      owner: "{{ gitlab_vault_user.username }}"
+      group: "{{ gitlab_vault_user.own_group }}"
+
+  - name: Save gitlab root password
+    include: "{{ playbook_dir }}/tasks/gitlab-users.yml"
+    with_items: 
+      - { username: "root" }
+    tags:
+      - gitlabroot
+
+#   Start and configure GitLab. Sometimes the first run fails, but after that,
+#   restarts fix problems, so ignore failures on this run.
+  - name: Reconfigure GitLab (first run)
+    command: gitlab-ctl reconfigure
+    failed_when: false
+
+  - name: Restart GitLab
+    command: gitlab-ctl restart
+# END Install Gitlab block
+  tags:
+    - gitlab
+
+- include: "gitlab-firewall-{{ ansible_facts['os_family'] }}.yml"
+  tags:
+    - firewall
+
+- name: Configure gitlab
+  block:
+  - include: "{{ playbook_dir }}/tasks/file-permission.yml"
+    with_together:
+      - "{{ gitlab_ssl_dir }}"
+      - 'directory'
+      - "{{ gitlab_user }}"
+    when: gitlab_create_self_signed_cert
+
+#  - name: Create gitLab SSL configuration folder
+#    file:
+#      path: "{{ gitlab_ssl_dir }}"
+#      state: directory
+#      owner: "{{ gitlab_vault_user.username }}"
+#      group: "{{ gitlab_vault_user.own_group }}"
+#      mode: "{{ gitlab_vault_user.file_mode }}"
+#    when: gitlab_create_self_signed_cert
+
+  - name: Create self-signed certificate
+    command: >
+      openssl req -x509 -nodes -new -newkey rsa:4096
+      -subj "{{ gitlab_self_signed_cert_subj }}" -days 1024
+      -keyout {{ gitlab_ssl_certificate_key }} -out {{ gitlab_ssl_certificate }}
+      -extensions v3_ca
+    args:
+      creates: "{{ gitlab_ssl_certificate }}"
+    when: gitlab_create_self_signed_cert
+
+  - name: Copy GitLab configuration file.
+    template:
+      src: "{{ gitlab_config_template }}"
+      dest: /etc/gitlab/gitlab.rb
+      owner: "{{ gitlab_user.username }}"
+      group: "{{ gitlab_user.group }}"
+      mode: "{{ gitlab_user.file_mode }}"
+    notify: reconfigure gitlab
+# END block Configure gitlab
+  tags:
+    - gitlab
+
+- name: Install python-gitlab module
+  pip:
+    name: gitlab
+    state: latest
+  tags:
+    - gitlab
+
+- name: Force all notified handlers
+  meta: flush_handlers
+
+- name: Set gitlab initial root password
+  block:
+  - name: First connection to gitlab api
+    uri:
+      url: "{{ gitlab_external_url }}/users/sign_in"
+      validate_certs: no
+      return_content: yes
+      follow_redirects: yes
+    register: gitlab_uri
+
+  - name: Set gitlab tokens variables
+    set_fact:
+      gitlab_csrf_token: "{{ gitlab_uri.content | regex_search('\"new_user\".*?authenticity_token\" value=\"(.*?)\"', '\\1' ) }}"
+      gitlab_reset_password_token: "{{ gitlab_uri.content | regex_search('value=\"(.*?)\" name=\".*?\" id=\"user_reset_password_token\"', '\\1' ) }}"
+
+  - name: Set initial password for gitlab root
+    uri:
+      url: "{{ gitlab_external_url }}/users/password"
+      body_format: form-urlencoded
+      validate_certs: no
+      return_content: yes
+      follow_redirects: yes
+      method: POST
+      body:
+        _method: "put"
+        authenticity_token: "{{ gitlab_csrf_token }}"
+        user[reset_password_token]: "{{ gitlab_reset_password_token }}"
+        user[password]: "{{ gitlab_root_password }}"
+        user[password_confirmation]: "{{ gitlab_root_password }}"
+      headers:
+        Cookie: "{{ gitlab_uri.cookies_string }}"
+  delegate_to: localhost
+  tags:
+    - gitlabroot
+
+- name: Include vagrant user task
+  include: "{{ playbook_dir }}/tasks/vagrant-user.yml"
+  when: item.username == 'vagrant'
+  with_items: "{{ users }}"
+  tags:
+    - vagrant
