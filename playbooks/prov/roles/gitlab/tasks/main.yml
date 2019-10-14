@@ -6,25 +6,27 @@
   tags:
     - gitlab
 
+# Packages
+- name: Install {{ role_name }} packages
+  package:
+    name: "{{ gitlab_packages }}"
+    state: latest
+
+- name: Ensure gitlab services is running and starts on boot
+  service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  with_items: "{{ gitlab_services }}"
+
+- name: Install {{ role_name }} python packages
+  package:
+    name: "{{ gitlab_python_packages }}"
+    state: latest
+
+# Gitlab
 - name: Install Gitlab block
   block:
-  - name: Install {{ role_name }} packages
-    package:
-      name: "{{ gitlab_packages }}"
-      state: latest
-
-  - name: Install {{ role_name }} python packages
-    package:
-      name: "{{ gitlab_python_packages }}"
-      state: latest
-
-  - name: Ensure gitlab services is running and starts on boot
-    service:
-      name: "{{ item }}"
-      state: started
-      enabled: true
-    with_items: "{{ gitlab_services }}"
-
   - name: Get GitLab repository script
     get_url:
       url: "https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.{{ gitlab_package_ext }}.sh"
@@ -44,21 +46,6 @@
       path: /tmp/gitlab.script.sh
       state: absent
 
-  - name: Create gitlab password vault dir
-    local_action:
-      module: file
-      path: "{{ gitlab_vault_passwd_dir }}"
-      state: directory
-      owner: "{{ gitlab_vault_user.username }}"
-      group: "{{ gitlab_vault_user.own_group }}"
-
-  - name: Save gitlab root password
-    include: "{{ playbook_dir }}/tasks/gitlab-users.yml"
-    with_items: 
-      - { username: "root" }
-    tags:
-      - gitlabroot
-
 #   Start and configure GitLab. Sometimes the first run fails, but after that,
 #   restarts fix problems, so ignore failures on this run.
   - name: Reconfigure GitLab (first run)
@@ -71,49 +58,20 @@
   tags:
     - gitlab
 
+# Firewall
 - include: "gitlab-firewall-{{ ansible_facts['os_family'] }}.yml"
   tags:
     - firewall
 
-- name: Configure gitlab
-  block:
-  - include: "{{ playbook_dir }}/tasks/file-permission.yml"
-    with_together:
-      - "{{ gitlab_ssl_dir }}"
-      - 'directory'
-      - "{{ gitlab_user }}"
-    when: gitlab_create_self_signed_cert
-
-#  - name: Create gitLab SSL configuration folder
-#    file:
-#      path: "{{ gitlab_ssl_dir }}"
-#      state: directory
-#      owner: "{{ gitlab_vault_user.username }}"
-#      group: "{{ gitlab_vault_user.own_group }}"
-#      mode: "{{ gitlab_vault_user.file_mode }}"
-#    when: gitlab_create_self_signed_cert
-
-  - name: Create self-signed certificate
-    command: >
-      openssl req -x509 -nodes -new -newkey rsa:4096
-      -subj "{{ gitlab_self_signed_cert_subj }}" -days 1024
-      -keyout {{ gitlab_ssl_certificate_key }} -out {{ gitlab_ssl_certificate }}
-      -extensions v3_ca
-    args:
-      creates: "{{ gitlab_ssl_certificate }}"
-    when: gitlab_create_self_signed_cert
-
-  - name: Copy GitLab configuration file.
-    template:
-      src: "{{ gitlab_config_template }}"
-      dest: /etc/gitlab/gitlab.rb
-      owner: "{{ gitlab_user.username }}"
-      group: "{{ gitlab_user.group }}"
-      mode: "{{ gitlab_user.file_mode }}"
-    notify: reconfigure gitlab
-# END block Configure gitlab
-  tags:
-    - gitlab
+# Post-install
+- name: Copy GitLab configuration file.
+  template:
+    src: "{{ gitlab_config_template }}"
+    dest: /etc/gitlab/gitlab.rb
+    owner: "{{ gitlab_user.username }}"
+    group: "{{ gitlab_user.group }}"
+    mode: "{{ gitlab_user.file_mode }}"
+  notify: reconfigure gitlab
 
 - name: Install python-gitlab module
   pip:
@@ -122,8 +80,43 @@
   tags:
     - gitlab
 
+# Gitlab users
+- name: Create gitlab password vault dir
+  local_action:
+    module: file
+    path: "{{ gitlab_vault_passwd_dir }}"
+    state: directory
+    owner: "{{ gitlab_vault_user.username }}"
+    group: "{{ gitlab_vault_user.own_group }}"
+
+- name: Create gitLab SSL configuration folder
+  file:
+    path: "{{ gitlab_ssl_dir }}"
+    state: 'directory'
+    owner: "{{ gitlab_user.username }}"
+    group: "{{ gitlab_user.group }}"
+    mode: "{{ gitlab_user.file_mode }}"
+  when: gitlab_create_self_signed_cert
+
+- name: Create self-signed certificate
+  command: >
+    openssl req -x509 -nodes -new -newkey rsa:4096
+    -subj "{{ gitlab_self_signed_cert_subj }}" -days 1024
+    -keyout {{ gitlab_ssl_certificate_key }} -out {{ gitlab_ssl_certificate }}
+    -extensions v3_ca
+  args:
+    creates: "{{ gitlab_ssl_certificate }}"
+  when: gitlab_create_self_signed_cert
+
 - name: Force all notified handlers
   meta: flush_handlers
+
+- name: Save gitlab root password
+  include: "{{ playbook_dir }}/tasks/gitlab-users.yml"
+  with_items: 
+    - { username: "root" }
+  tags:
+    - gitlabroot
 
 - name: Set gitlab initial root password
   block:
@@ -160,9 +153,9 @@
   tags:
     - gitlabroot
 
-- name: Include vagrant user task
-  include: "{{ playbook_dir }}/tasks/vagrant-user.yml"
-  when: item.username == 'vagrant'
-  with_items: "{{ users }}"
+# Users
+- include: "{{ playbook_dir }}/tasks/vagrant-user.yml"
+#  when: item.username == 'vagrant'
+#  with_items: "{{ users }}"
   tags:
     - vagrant

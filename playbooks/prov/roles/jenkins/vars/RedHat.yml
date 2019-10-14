@@ -6,13 +6,13 @@ jenkins_packages:
   - git
 
 jenkins_ansible_data:
-  program: "ansible"
+  service: "ansible"
   packages:
     - epel-release
     - ansible
 
 jenkins_data:
-  program: "jenkins"
+  service: "jenkins"
   yum_repo_description: "Jenkins-stable"
   yum_repo: "http://pkg.jenkins-ci.org/redhat-stable"
   yum_gpg: true

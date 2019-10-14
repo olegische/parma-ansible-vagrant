@@ -76,18 +76,12 @@
       command: "ansible-vault encrypt {{ user_passwd_path }} --vault-id {{ vault_id_common_file }}"
       when: inventory_hostname != 'localhost'
 
-    - include: "{{ playbook_dir }}/tasks/file-permission.yml"
-      with_together:
-        - "{{ user_passwd_path }}"
-        - 'file'
-        - "{{ vault_user }}"
-
-#    - name: Set permission to '{{ item.username }}' user password file
-#      file:
-#        path: "{{ user_passwd_path }}"
-#        owner: "{{ vault_user.username }}"
-#        group: "{{ vault_user.own_group }}"
-#        mode: "{{ vault_user.file_mode }}"
+    - name: Set permission to '{{ item.username }}' user password file
+      file:
+        path: "{{ user_passwd_path }}"
+        owner: "{{ vault_user.username }}"
+        group: "{{ vault_user.group }}"
+        mode: "{{ vault_user.file_mode }}"
 # END block Save client's password
     delegate_to: localhost
     tags:

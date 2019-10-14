@@ -1,2 +1,7 @@
 ---
 # file: roles/jenkins/handlers/main.yml
+
+- name: restart jenkins
+  service:
+    name: jenkins
+    state: restarted

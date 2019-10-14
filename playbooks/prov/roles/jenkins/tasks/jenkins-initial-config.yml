@@ -1,0 +1,104 @@
+---
+# file: roles/jenkins/tasks/jenkins-initial-config.yml
+
+#Secure jenkins_home https://wiki.jenkins.io/display/JENKINS/Securing+JENKINS_HOME
+#Standard Security Setup https://wiki.jenkins.io/display/JENKINS/Standard+Security+Setup
+
+# Jenkins admin
+- name: Create directory '{{ jenkins_vault_passwd_dir }}'
+  file:
+    path: "{{ jenkins_vault_passwd_dir }}"
+    state: 'directory'
+    owner: "{{ jenkins_vault_user.username }}"
+    group: "{{ jenkins_vault_user.group }}"
+    mode: "{{ jenkins_vault_user.dir_mode }}"
+  delegate_to: localhost
+  tags:
+    - vaultdir
+
+- name: Check {{ jenkins_init_admin_password_file }} exists
+  stat:
+    path: "{{ jenkins_init_admin_password_file }}"
+  register: stat_res
+  delay: 5
+  until: stat_res.stat.exists == true
+  failed_when: false
+
+- name: Save jenkins admin password, delete {{ jenkins_init_admin_password_file }}
+  include: 'jenkins-users.yml'
+  with_items: 
+    - "{{ jenkins_admin_user }}"
+#    - { username: 'admin', isAdmin: 'true' }
+
+- name: Get jenkins admin password
+  block:
+  - name: Set jenkins admin user password file variable
+    set_fact:
+      jenkins_admin_passwd_path: "{{ jenkins_vault_passwd_dir }}/{{ inventory_hostname }}.{{ jenkins_admin_user.username }}"
+      cacheable: no
+
+  - name: Read jenkins admin user password
+    command: "ansible-vault view {{ jenkins_admin_passwd_path }} --vault-id {{ vault_id_labels[0] }}@{{ vault_id_path }}/{{ vault_id_labels[0] }}_pass"
+    register: ansible_vault_view
+    no_log: true
+    delegate_to: localhost
+
+  - name: Set jenkins admin user password variable
+    set_fact:
+      jenkins_admin_password: "{{ ansible_vault_view.stdout }}"
+      cacheable: no
+    when: ansible_vault_view is succeeded
+    no_log: true
+# END block Get jenkins admin password
+
+# Post-install
+# https://wiki.jenkins.io/display/JENKINS/Post-initialization+script
+# https://wiki.jenkins.io/display/JENKINS/Configuring+Jenkins+upon+start+up
+
+- name: Update {{ jenkins_sysconfig_file }} with disabled wizards
+  template:
+    src: "{{ jenkins_sysconfig_temp }}.j2"
+    dest: "{{ jenkins_sysconfig_file }}"
+
+- name: Ensure directory '{{ jenkins_home }}' exists
+  file:
+    path: "{{ jenkins_home }}"
+    state: 'directory'
+    owner: "{{ jenkins_admin_user.username }}"
+    group: "{{ jenkins_admin_user.group }}"
+    mode: "{{ jenkins_admin_user.dir_mode }}"
+
+- name: Create directory '{{ jenkins_home }}/init.groovy.d'
+  file:
+    path: "{{ jenkins_home }}/init.groovy.d"
+    state: 'directory'
+    owner: "{{ jenkins_admin_user.username }}"
+    group: "{{ jenkins_admin_user.group }}"
+    mode: "{{ jenkins_admin_user.dir_mode }}"
+
+- name: Copy {{ jenkins_config_file }}
+  copy:
+    src: "{{ jenkins_config_file }}"
+    dest: "{{ jenkins_home }}/config.xml"
+    owner: "{{ jenkins_admin_user.username }}"
+    group: "{{ jenkins_admin_user.group }}"
+    mode: "{{ jenkins_admin_user.file_mode }}"
+
+- name: Copy {{ jenkins_script_security_init_temp }}
+  template:
+    src: "{{ jenkins_script_security_init_temp }}.j2"
+    dest: "{{ jenkins_home }}/init.groovy.d/{{ jenkins_script_security_init_temp }}"
+    owner: "{{ jenkins_admin_user.username }}"
+    group: "{{ jenkins_admin_user.group }}"
+    mode: "{{ jenkins_admin_user.file_mode }}"
+  notify: restart jenkins
+    
+- name: Force all notified handlers
+  meta: flush_handlers
+
+- include: 'jenkins-wait-for-ready.yml'
+
+- name: Delete {{ jenkins_script_security_init_temp }}
+  file:
+    path: "{{ jenkins_home }}/init.groovy.d/{{ jenkins_script_security_init_temp }}"
+    state: 'absent'

@@ -6,6 +6,18 @@
   tags:
     - vagrant
 
+# Packages
+- name: Install {{ role_name }} hypervisor packages
+  package:
+    name: "{{ hypervisor_packages }}"
+    state: latest
+
+- name: Install {{ role_name }} packages
+  package:
+    name: "{{ vagrant_packages }}"
+    state: latest
+
+# Vagrant
 - name: Install Vagrant block
   block:
   - name: Get vagrant download page content
@@ -34,17 +46,6 @@
     file:
       path: "/usr/local/src/{{ vagrant_package }}"
       state: absent
-
-  - name: Install {{ role_name }} hypervisor packages
-    package:
-      name: "{{ hypervisor_packages }}"
-      state: latest
-
-  - name: Install {{ role_name }} packages
-    package:
-      name: "{{ vagrant_packages }}"
-      state: latest
-
 # END Install Vagrant block
   tags:
     - vagrant

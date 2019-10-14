@@ -1,5 +1,5 @@
 ---
-# file: playbooks-prov/roles/jenkins/tasks/jenkins-users.yml
+# file: roles/jenkins/tasks/jenkins-users.yml
 
 - name: Jenkins user config
   block:
@@ -15,37 +15,35 @@
     when: jenkins_user_passwd_reg is succeeded
     no_log: true
 
-  - name: Read remote jenkins initial password file
-    slurp:
-      src: "{{ jenkins_init_password_file }}"
-    register: jenkins_slurp
+  # - name: Read remote jenkins initial password file
+  #   slurp:
+  #     src: "{{ jenkins_init_admin_password_file }}"
+  #   register: jenkins_slurp
 
-  - name: Set jenkins init admin password file variable
+  # - name: Set jenkins init admin password file variable
+  #   set_fact:
+  #     jenkins_init_admin_passwd: "{{ jenkins_slurp['content'] | b64decode }}"
+  #     cacheable: no
+
+  # - name: Set jenkins {{ item.username }} user password variable
+  #   set_fact:
+  #     jenkins_admin_password: "{{ jenkins_user_password }}"
+  #     cacheable: no
+  #   when: item.username == "admin"
+  #   no_log: true
+
+  - name: Set jenkins {{ item.username }} user password file variable
     set_fact:
-      jenkins_init_admin_passwd: "{{ jenkins_slurp['content'] | b64decode }}"
+      jenkins_user_passwd_path: "{{ jenkins_vault_passwd_dir }}/{{ inventory_hostname }}.{{ item.username }}"
       cacheable: no
+
+  - name: Init admin config -- Check {{ jenkins_init_admin_password_file }} exists
+    stat:
+      path: "{{ jenkins_init_admin_password_file }}"
+    register: stat_jenkins_init_admin_password_file_res
 
   - name: Save jenkins {{ item.username }} user password
     block:
-    - name: Set jenkins {{ item.username }} user password file variable
-      set_fact:
-        jenkins_user_passwd_path: "{{ jenkins_vault_passwd_dir }}/{{ inventory_hostname }}.{{ item.username }}"
-        cacheable: no
-
-    - name: Check initial config
-      stat:
-        path: "{{ jenkins_user_passwd_path }}"
-      register: jenkins_stat_result
-      when: item.username == 'admin'
-
-    - name: Change jenkins {{ item.username }} user password variable
-      set_fact:
-        jenkins_user_password: "{{ jenkins_init_admin_passwd }}"
-        cacheable: no
-      when: item.username == 'admin' and
-            jenkins_stat_result.stat.exists == false
-      no_log: true
-
     - name: Save jenkins {{ item.username }} user password
       copy:
         dest: "{{ jenkins_user_passwd_path }}"
@@ -56,20 +54,58 @@
     - name: Encrypt jenkins {{ item.username }} user password file
       command: "ansible-vault encrypt {{ jenkins_user_passwd_path }} --vault-id {{ vault_id_labels[0] }}@{{ vault_id_path }}/{{ vault_id_labels[0] }}_pass"
 
-    - include: "{{ playbook_dir }}/tasks/file-permission.yml"
-      with_together:
-        - "{{ jenkins_user_passwd_path }}"
-        - 'file'
-        - "{{ jenkins_vault_user }}"
-
-#    - name: Set permission to jenkins '{{ item.username }}' user password file
-#      file:
-#        path: "{{ jenkins_user_passwd_path }}"
-#        owner: "{{ ansible_user_srv.username }}"
-#        group: "{{ ansible_user_srv.own_group }}"
-#        mode: "{{ ansible_user_srv.file_mode }}"
+    - name: Set permission to jenkins '{{ item.username }}' user password file
+      file:
+        path: "{{ jenkins_user_passwd_path }}"
+        owner: "{{ jenkins_vault_user.username }}"
+        group: "{{ jenkins_vault_user.group }}"
+        mode: "{{ jenkins_vault_user.file_mode }}"
 # END block Save jenkins user password
     delegate_to: localhost
+
+  - name: Users groovy script
+    jenkins_script:
+      user: "{{ jenkins_admin_user.username | default(None) }}"
+      password: "{{ jenkins_admin_password | default(None) }}"
+      script: "{{ jenkins_script_security_users }}"
+      url: "{{ jenkins_external_url }}"
+      validate_certs: 'yes'
+      args:
+        user_name: "{{ item.username }}"
+        user_pass: "{{ jenkins_user_password }}"
+        user_role: "{{ item.role }}"
+    when: stat_jenkins_init_admin_password_file_res.stat.exists != true
+    register: security_users_status
+    changed_when: security_users_status.output.find("security was configured") != -1
+
+#   - name: Users groovy script
+#     block:
+#     - name: Copy '{{ item.username }}.{{ jenkins_script_security_users_temp }}'
+#       template:
+#         src: "{{ jenkins_script_security_users_temp }}.j2"
+#         dest: "{{ jenkins_home }}/init.groovy.d/{{ item.username }}.{{ jenkins_script_security_users_temp }}"
+#         owner: "{{ jenkins_admin_user.username }}"
+#         group: "{{ jenkins_admin_user.group }}"
+#         mode: "{{ jenkins_admin_user.file_mode }}"
+#       notify: restart jenkins
+        
+#     - name: Force all notified handlers
+#       meta: flush_handlers
+
+#     - include: 'jenkins-wait-for-ready.yml'
+
+#     - name: Delete '{{ item.username }}.{{ jenkins_script_security_users_temp }}'
+#       file:
+#         path: "{{ jenkins_home }}/init.groovy.d/{{ item.username }}.{{ jenkins_script_security_users_temp }}"
+#         state: 'absent'
+# # END block Users groovy script
+#     when: stat_jenkins_init_admin_password_file_res.stat.exists != true # handle Init admin config
+
+  - name: Init admin config -- Delete {{ jenkins_init_admin_password_file }}
+    file:
+      path: "{{ jenkins_init_admin_password_file }}"
+      state: 'absent'
+    when: stat_jenkins_init_admin_password_file_res.stat.exists == true
 # END block Jenkins user config
   tags:
     - jenkinsuser

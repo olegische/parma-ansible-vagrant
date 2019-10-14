@@ -1,3 +1,13 @@
+# Install jenkins
+# setup
+# plugins
+# users
+# credentials
+# jobs
+
+
+
+
 # https://github.com/hogarthj/jenkins_script_demo/blob/master/roles/jenkins/tasks/main.yml
 # https://github.com/geerlingguy/ansible-role-jenkins/blob/master/tasks/main.yml
 # https://github.com/wjoel/ansible-jenkins-pipeline/blob/master/tasks/main.yml

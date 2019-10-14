@@ -1,0 +1,21 @@
+---
+# file: roles/jenkins/tasks/jenkins-groovy.yml
+
+- name: Copy '{{ item }}'
+  template:
+    src: "{{ item }}.j2"
+    dest: "{{ jenkins_home }}/init.groovy.d/{{ item }}"
+    owner: "{{ jenkins_admin_user.username }}"
+    group: "{{ jenkins_admin_user.group }}"
+    mode: "{{ jenkins_admin_user.file_mode }}"
+  notify: restart jenkins
+    
+- name: Force all notified handlers
+  meta: flush_handlers
+
+- include: 'jenkins-wait-for-ready.yml'
+
+- name: Delete {{ item }}
+  file:
+    path: "{{ jenkins_home }}/init.groovy.d/{{ item }}"
+    state: 'absent'

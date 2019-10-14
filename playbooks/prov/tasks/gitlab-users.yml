@@ -60,18 +60,12 @@
     - name: Encrypt gitlab {{ item.username }} user password file
       command: "ansible-vault encrypt {{ gitlab_user_passwd_path }} --vault-id {{ vault_id_labels[0] }}@{{ vault_id_path }}/{{ vault_id_labels[0] }}_pass"
 
-    - include: "{{ playbook_dir }}/tasks/file-permission.yml"
-      with_together:
-        - "{{ gitlab_user_passwd_path }}"
-        - 'file'
-        - "{{ gitlab_vault_user }}"
-
-#    - name: Set permission to gitlab '{{ item.username }}' user password file
-#      file:
-#        path: "{{ gitlab_user_passwd_path }}"
-#        owner: "{{ vault_user.username }}"
-#        group: "{{ vault_user.own_group }}"
-#        mode: "{{ vault_user.file_mode }}"
+    - name: Set permission to gitlab '{{ item.username }}' user password file
+      file:
+        path: "{{ gitlab_user_passwd_path }}"
+        owner: "{{ gitlab_vault_user.username }}"
+        group: "{{ gitlab_vault_user.group }}"
+        mode: "{{ gitlab_vault_user.file_mode }}"
 # END block Save gitlab password
     delegate_to: localhost
 # END block Create gitlab user block

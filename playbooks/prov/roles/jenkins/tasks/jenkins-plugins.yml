@@ -1,0 +1,59 @@
+---
+# file: roles/jenkins/tasks/jenkins-plugins.yml
+
+- name: Install plugins
+  jenkins_plugin:
+    name: "{{ item.key }}"
+    jenkins_home: "{{ jenkins_home }}"
+    url_username: "{{ jenkins_admin_user.username }}"
+    url_password: "{{ jenkins_admin_password }}"
+    timeout: "{{ jenkins_plugin_timeout }}"
+    updates_expiration: "{{ jenkins_plugin_updates_expiration }}"
+    updates_url: "{{ jenkins_updates_url }}"
+    url: "{{ jenkins_external_url }}"
+    with_dependencies: "{{ jenkins_plugins_with_dependencies }}"
+    state: "{{ jenkins_plugins_state }}"
+    validate_certs: 'yes'
+  register: jenkins_plugins_reg
+  with_dict: "{{ jenkins_plugins }}"
+
+- name: Initiate restart variable
+  set_fact:
+    jenkins_restart_required: 'no'
+
+- name: Check if restart is required by any of the installed plugins
+  set_fact:
+    jenkins_restart_required: 'yes'
+  when: item.changed
+  with_items: "{{ jenkins_plugins_reg.results }}"
+
+- name: Restart Jenkins if required
+  service:
+    name: jenkins
+    state: restarted
+  when: jenkins_restart_required
+
+- include: 'jenkins-wait-for-ready.yml'
+  when: jenkins_restart_required
+
+- name: Reset the fact
+  set_fact:
+    jenkins_restart_required: 'no'
+  when: jenkins_restart_required
+
+- name: Plugin enabling
+  jenkins_plugin:
+    name: "{{ item.key }}"
+    jenkins_home: "{{ jenkins_home }}"
+    url_username: "{{ jenkins_admin_user.username }}"
+    url_password: "{{ jenkins_admin_password }}"
+    timeout: "{{ jenkins_plugin_timeout }}"
+    updates_expiration: "{{ jenkins_plugin_updates_expiration }}"
+    updates_url: "{{ jenkins_updates_url }}"
+    url: "{{ jenkins_external_url }}"
+    with_dependencies: "{{ jenkins_plugins_with_dependencies }}"
+    state: "{{ 'enabled' if item.value['enabled'] else 'disabled'}}"
+    validate_certs: 'yes'
+  when: >
+    'enabled' in item.value
+  with_dict: "{{ jenkins_plugins }}"

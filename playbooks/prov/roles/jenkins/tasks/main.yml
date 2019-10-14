@@ -4,24 +4,31 @@
 - name: Include OS specific vars
   include_vars: "{{ ansible_facts['os_family'] }}.yml"
   tags:
-    - ansible
-    - jenkins
+    - ansibleinstall
+    - jenkinsinstall
+    - jenkinsfirewall
+    - jenkinsconfig
+    - jenkinsplugins
+    - jenkinsmatrix
+    - jenkinsusers
 
+# Packages
 - include: "ansible-install-{{ ansible_facts['os_family'] }}.yml"
   with_items: 
     - "{{ jenkins_ansible_data }}"
   loop_control:
     loop_var: outer_item
   tags:
-    - ansible
+    - ansibleinstall
 
+- name: Install {{ role_name }} packages
+  package:
+    name: "{{ jenkins_packages }}"
+    state: latest
+
+# Jenkins
 - name: Install Jenkins block
   block:
-  - name: Install {{ role_name }} packages
-    package:
-      name: "{{ jenkins_packages }}"
-      state: latest
-
   - include: "jenkins-install-{{ ansible_facts['os_family'] }}.yml"
     with_items: 
       - "{{ jenkins_data }}"
@@ -36,47 +43,59 @@
     with_items: "{{ jenkins_services }}"
 # END Install Jenkins block
   tags:
-    - jenkins
+    - jenkinsinstall
 
+# Firewall
 - include: "jenkins-firewall-{{ ansible_facts['os_family'] }}.yml"
   tags:
-    - firewall
+    - jenkinsfirewall
 
-- include: "{{ playbook_dir }}/tasks/file-permission.yml"
-  with_together:
-    - "{{ jenkins_vault_passwd_dir }}"
-    - 'directory'
-    - "{{ jenkins_vault_user }}"
-  delegate_to: localhost
+# Post-install
+- name: Post install configuration
+  include: 'jenkins-initial-config.yml'
   tags:
-    - vaultdir
-
-#- name: Create jenkins password vault dir
-#  local_action:
-#    module: file
-#    path: "{{ jenkins_vault_passwd_dir }}"
-#    state: directory
-#    owner: "{{ jenkins_service_user.username }}"
-#    group: "{{ jenkins_service_user.own_group }}"
-#  tags:
-#    - vaultdir
-
-# Wait for initial admin password file will be created.
-- name: Pause playbook for jenkins readiness
-  pause:
-    seconds: 10
-
-- name: Save jenkins admin initial password. Create and save jenkins root password.
-  include: jenkins-users.yml
-  with_items: 
-    - { username: "admin" }
-    - "{{ jenkins_service_admin }}"
+    - jenkinsconfig
+    
+# Plugins
+- name: Install jenkins plugins
+  include: 'jenkins-plugins.yml'
   tags:
-    - jenkinsadmin
+    - jenkinsplugins
 
-- name: Include vagrant user task
-  include: "{{ playbook_dir }}/tasks/vagrant-user.yml"
-  when: item.username == 'vagrant'
-  with_items: "{{ users }}"
+# Security strategy
+- name: Set matrix strategy
+  jenkins_script:
+    user: "{{ jenkins_admin_user.username }}"
+    password: "{{ jenkins_admin_password }}"
+    script: "{{ jenkins_script_security_strategy_matrix }}"
+    url: "{{ jenkins_external_url }}"
+    validate_certs: 'yes'
+    args:
+      admin_name: "{{ jenkins_admin_user.username }}"
+  register: security_users_status
+  changed_when: security_users_status.output.find("matrix security set") != -1
   tags:
-    - vagrant
+    - jenkinsmatrix
+
+# Users
+- name: Configure users
+  include: 'jenkins-users.yml'
+  with_items: "{{ jenkins_users }}"
+  tags:
+    - jenkinsusers
+
+# Credentials
+
+
+
+
+- debug:
+    msg: "{{ jenkins_admin_password }}"
+
+# Jobs
+
+#- include: "{{ playbook_dir }}/tasks/vagrant-user.yml"
+  #when: item.username == 'vagrant'
+  #with_items: "{{ users }}"
+  #tags:
+    #- vagrant

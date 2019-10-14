@@ -1,13 +1,13 @@
 ---
 # file: roles/jenkins/tasks/install-from-repo-Debian.yml
 
-- name: Install '{{ item.program }}' block
+- name: Install '{{ item.service }}' block
   block:
-  - name: Set '{{ item.program }}' apt source list path variable
+  - name: Set '{{ item.service }}' apt source list path variable
     set_fact:
-      repo_list_path: "/etc/apt/sources.list.d/{{ item.program }}.list"
+      repo_list_path: "/etc/apt/sources.list.d/{{ item.service }}.list"
 
-  - name: Add '{{ item.program }}' repo
+  - name: Add '{{ item.service }}' repo
     copy:
       dest: "{{ repo_list_path }}"
       content: |
@@ -16,7 +16,7 @@
     tags:
       - addrepo
 
-  - name: Add '{{ item.program }}' apt key by id from a keyserver
+  - name: Add '{{ item.service }}' apt key by id from a keyserver
     apt_key:
       keyserver: "{{ item.apt_key_server }}"
       id: "{{ item.apt_key_id }}"
@@ -24,7 +24,7 @@
     tags:
       - addkey
 
-  - name: Add '{{ item.program }}' apt key by id from a keyserver
+  - name: Add '{{ item.service }}' apt key by id from a keyserver
     apt_key:
       url: "{{ item.apt_key_url }}"
       state: present
@@ -40,7 +40,7 @@
     tags:
       - update
 
-  - name: Install Debian '{{ item.program }}' packages
+  - name: Install Debian '{{ item.service }}' packages
     package:
       name: "{{ item.packages }}"
       state: latest
@@ -48,7 +48,7 @@
     tags:
       - install
 
-  - name: Delete '{{ item.program }}' apt key by id
+  - name: Delete '{{ item.service }}' apt key by id
     apt_key:
       id: "{{ item.apt_key_id }}"
       state: absent
@@ -56,7 +56,7 @@
     tags:
       - delkey
 
-  - name: Delete '{{ item.program }}' repo
+  - name: Delete '{{ item.service }}' repo
     file:
       path: "{{ repo_list_path }}"
       state: absent

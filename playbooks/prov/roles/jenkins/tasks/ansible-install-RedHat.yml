@@ -1,7 +1,7 @@
 ---
 # file: roles/jenkins/tasks/ansible-install-RedHat.yml
 
-- name: Install RedHat '{{ outer_item.program }}' packages
+- name: Install RedHat '{{ outer_item.service }}' packages
   package:
     name: "{{ outer_item.packages }}"
     state: latest

@@ -8,6 +8,8 @@
 #
 # Oleg Romanchuk, 2019-08-20, olromanchuk@gmail.com
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 source $SCRIPT_DIR/lib/parma-task-srv-functions.sh
 source $SCRIPT_DIR/lib/const.sh
 source $SCRIPT_DIR/lib/common-functions.sh

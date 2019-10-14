@@ -2,6 +2,8 @@
 
 # Script for getting ansible client's user password from vault.
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 source $SCRIPT_DIR/lib/const.sh
 source $SCRIPT_DIR/lib/common-functions.sh
 

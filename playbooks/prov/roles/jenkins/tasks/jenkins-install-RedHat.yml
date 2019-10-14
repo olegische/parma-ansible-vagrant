@@ -1,17 +1,17 @@
 ---
 # file: roles/jenkins/tasks/jenkins-install-RedHat.yml
 
-- name: Install '{{ outer_item.program }}' block
+- name: Install '{{ outer_item.service }}' block
   block:
   - name: Add the '{{ outer_item.yum_repo_description }}' repository to the yum repos
     yum_repository:
-      name: "{{ outer_item.program }}"
+      name: "{{ outer_item.service }}"
       description: "{{ outer_item.yum_repo_description }}"
       baseurl: "{{ outer_item.yum_repo }}"
       gpgcheck: "{{ outer_item.yum_gpg }}"
       gpgkey: "{{ outer_item.yum_gpg_key }}"
 
-  - name: Install '{{ outer_item.program }}'
+  - name: Install '{{ outer_item.service }}'
     package:
       name: "{{ outer_item.packages }}"
       state: present

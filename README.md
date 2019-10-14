@@ -1,10 +1,26 @@
-# Решение ansible-vagrant
+# Тестовое задание от PARMA Technologies Group
+## Задание
+Создать 3 vm (любой гипервизор, можно VirtualBox)
+- Jenkins (centos7/ubuntu)
+- gitlab (centos7/ubuntu)
+- testbox (centos7)
+
+Jenkins: Создать job, которая бы запустила ansible playbook Gitlab: 
+в единственный репозиторий положить:
+- ansible playbook
+- любое тестовое вебприложение класса "Hello, world" на любом языке/стеке
+- заполнить readme.md Ansible playbook: На узел testbox устанавливает любой 
+вебсервер (nginx, apache, lighttpd, tomcat) + деплоит на него вебприложение 'hello,world'
+
+Описать кратко решение задачи и инструкции для проверки.
+
+## Решение
+### Начальные настройки
+Решение использует программу Vagrant.
+
 Скрипты задания совместимы с системами CentOS/RedHat и Debian.
 
-## Начальные настройки
-Скрипт parma-task-srv.sh позволяет подготовить сервисы для обсуживания
-программного окружения задания.
-Самый простой способ установить все необходимые программы:
+Подготовка сервисов для обсуживания программного окружения задания:
 ```
 sudo ./parma-task-srv.sh --install ansible vagrant
 ```
@@ -12,17 +28,17 @@ sudo ./parma-task-srv.sh --install ansible vagrant
 С помощью скрипта можно устанавливать программы ansible и vagrant по
 отдельности (см. --help).
 
-## Создание окружения
-Создаем программное окружение задания:
+### Создание окружения
+Создание окружения виртуальных машин:
 ```
 sudo ./parma-task-env.sh --up
 ```
-Скрипт с использованием сервиса vagrant создаст следующие ВМ:
-- vm-gitlab (роль gitlab)
-- vm-jenkins (роль jenkins)
-- vm-testbox (роль testbox)
+Скрипт с использованием Vagrant создает следующие ВМ:
+- vm-gitlab (ansible роль gitlab)
+- vm-jenkins (ansible роль jenkins)
+- vm-testbox (ansible роль testbox)
 
-Виртуальные машины не будут созданы, если суммарный объем оперативной памяти, доступной системе
+Виртуальные машины не будут созданы, если суммарный объем оперативной памяти, доступный системе,
 будет менее 6 ГиБ.
 
 В качестве provider виртуальных машин используется libvirt. В качестве provisioner -- Ansible.
@@ -32,21 +48,30 @@ sudo ./parma-task-env.sh --up
 Для полной автоматизации не решены задачи:
 - Получение access token к Gitlab API для пользователя root через curl или ansible uri.
 
-В сервисе gitlab уже изменен пароль root. Пароль root для доступа к GUI Gitlab по адресу 
-https://vm-gitlab можно получить следующей командой:
+Скрипт parma-task-env.sh создает хранилища для паролей пользователей виртуальных машин,
+а так же пользователей сервисов Gitlab и Jenkins. Пароли шифруются с использованием ansible-vault.
+
+Получение пароля root для доступа к GUI Gitlab:
 ```
-sudo ./vault-get-user-pass.sh -v gitlab -h vm-gitlab -u root
+sudo ./vault-get-user-pass.sh --vault gitlab --host vm-gitlab --user root
 ```
-Дополнительно необходимо разрешить доступ к Gitlab API из локальной сети:
+
+GUI Gitlab доступен по адресу https://vm-gitlab.
+
+Необходимо разрешить доступ к Gitlab API из локальной сети:
 - Перейти по адресу https://vm-gitlab/admin/application_settings/network
 - Воспользоваться меню Outbound requests --> Allow requests to the local network 
   from hooks and services --> Save changes.
 
-Пароль для доступа к GUI Jenkins по адресу http://vm-jenkins:8080 можно получить 
-следующей командой:
+Получение пароля admin для доступа к GUI Jenkins:
 ```
 sudo ./vault-get-user-pass.sh -v jenkins -h vm-jenkins -u admin
 ```
+
+GUI Jenkins доступен по адресу http://vm-jenkins:8080.
+
+
+<Начало временного решения>
 Устанавливаем необходимые плагины для jenkins. Добавляем администратора сервиса Jenkins.
 Для целей задания в качестве администратора можно создать пользователя root с адресом 
 эл. почты ansible@vm-jenkins. Пароль для пользователя root уже сгенерирован, и 
@@ -54,11 +79,12 @@ sudo ./vault-get-user-pass.sh -v jenkins -h vm-jenkins -u admin
 ```
 sudo ./vault-get-user-pass.sh -v jenkins -h vm-jenkins -u root
 ```
+<Конец временного решения>
+
 
 Окружение готово к использованию.
 
-## Настройка CI.
-
+### Настройка CI.
 
 
 Для получения access token после аутентификации используем endpoint https://vm-gitlab/profile/personal_access_tokens
@@ -77,7 +103,7 @@ parma-task-srv.sh.
 
 Работу скрипта parma-task-srv.sh можно тестировать скриптом test-parma-task-srv.sh.
 
-## Действия ролей
+### Действия ролей
 Действия роли **ansible**:
 - Установка пакетов openssh-client и openssl (для генерации рандомных паролей).
 - Создание каталога для хранения паролей пользователей всех клиентов под 

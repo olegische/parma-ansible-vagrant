@@ -1,18 +1,19 @@
 ---
 # file: roles/vagrant/tasks/vagrant-user.yml
 
-- name: Generate '{{ item.username }}' user password
-  shell: "{{ generate_password_command }}"
-  register: user_passwd_reg
-  no_log: true
-
-- name: Update '{{ item.username }}' user password
+# vagrant
+- name: Remove vagrant user
   user:
-    name: "{{ item.username }}"
-    password: "{{ user_passwd | password_hash('sha512') }}"
-    update_password: always
-  no_log: true
+    name: 'vagrant'
+    state: 'absent'
+    remove: yes
 
+- name: Remove default vagrant sudoers file
+  file:
+    path: '/etc/sudoers.d/vagrant'
+    state: 'absent'
+
+# root
 - name: Generate root user password
   shell: "{{ generate_password_command }}"
   register: root_passwd_reg
@@ -20,12 +21,7 @@
 
 - name: Update root user password
   user:
-    name: root
+    name: 'root'
     password: "{{ root_passwd_reg.stdout | password_hash('sha512') }}"
-    update_password: always
+    update_password: 'always'
   no_log: true
-
-- name: Remove default vagrant sudoers file
-  file:
-    path: /etc/sudoers.d/vagrant
-    state: absent

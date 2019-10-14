@@ -1,0 +1,52 @@
+#!/usr/bin/env groovy
+
+import hudson.security.*
+import hudson.model.*
+import jenkins.model.*
+
+class User {
+    String username, password;
+ }
+
+class Security {
+    String username, password;
+
+    HudsonPrivateSecurityRealm hudsonRealm = new HudsonPrivateSecurityRealm(false);
+
+    boolean checkUser(String un) {
+        def us = hudsonRealm.getAllUsers();
+        if (us.contains(un)) {
+            return true;
+        }
+        return false;
+    }
+
+    void updateUser(String un, String pw) {
+        def u = hudson.model.User.get(un);
+        def p = hudson.security.HudsonPrivateSecurityRealm.Details.fromPlainPassword(pw);
+        u.addProperty(p);
+        u.save();
+    }
+
+    void createUser(String un, String pw) {
+        hudsonRealm.createAccount(un, pw);
+
+        def instance = Jenkins.get();
+        instance.setSecurityRealm(hudsonRealm);
+
+        def strategy = new FullControlOnceLoggedInAuthorizationStrategy();
+        instance.setAuthorizationStrategy(strategy);
+        instance.save();
+    }
+}
+
+User user = new User(username: "{{ jenkins_admin_user.username }}", password: "{{ jenkins_admin_password }}");
+Security security = new Security();
+
+if (security.checkUser(user.username) == true) {
+    println "Updating user";
+    security.updateUser(user.username, user.password);
+} else {
+    println "Creating user";
+    security.createUser(user.username, user.password);
+}

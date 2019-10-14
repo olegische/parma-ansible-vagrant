@@ -97,7 +97,7 @@ Vagrant.configure("2") do |config|
         ansible.compatibility_mode = "auto"
         ansible.playbook = "playbooks/prov/" + machine[:group] + ".yml"
         ansible.become = true
-        ansible.inventory_path = "playbooks-prov/hosts"
+        ansible.inventory_path = "playbooks/prov/hosts"
         ansible.raw_arguments = ["--vault-id", "/home/ansible/.vault_pass/" + VAULT_ID + "_pass"]
       end
     end

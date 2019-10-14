@@ -1,0 +1,36 @@
+---
+# file: test-jenkins-groovy.yml
+
+- name: Test jenkins groovy
+  hosts: "{{ jenkins_host }}"
+
+  vars:
+    ansible_become: yes
+    ansible_become_method: sudo
+    jenkins_message: 'tested'
+    jenkins_groovy: "{{ lookup('file', 'roles/jenkins/groovy/test.groovy') }}"
+    test_file: '/home/ansible/.bashrc'
+
+  tasks:
+    - name: Include OS specific vars
+      include_vars: 'roles/jenkins/defaults/main.yml'
+
+    - name: Check that {{ test_file }} exists
+      stat:
+        path: "{{ test_file }}"
+      register: stat_result
+
+    - name: Test groovy
+      jenkins_script:
+        user: "{{ jenkins_admin_user.username }}"
+        password: "{{ jenkins_admin_password }}"
+        script: "{{ jenkins_groovy }}"
+        url: "{{ jenkins_external_url }}"
+        validate_certs: 'yes'
+        args:
+          admin_name: "{{ jenkins_admin_user.username }}"
+      register: test_groovy_status
+      # changed_when: test_groovy_status.output.find(jenkins_message) != -1
+
+    - debug:
+        msg: "{{ test_groovy_status }}"

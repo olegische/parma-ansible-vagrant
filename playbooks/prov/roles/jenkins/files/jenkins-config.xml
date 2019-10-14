@@ -2,7 +2,7 @@
 <hudson>
   <disabledAdministrativeMonitors/>
   <version>2.176.3</version>
-  <installStateName>NEW</installStateName>
+  <installStateName>INITIAL_SETUP_COMPLETED</installStateName>
   <numExecutors>2</numExecutors>
   <mode>NORMAL</mode>
   <useSecurity>true</useSecurity>
