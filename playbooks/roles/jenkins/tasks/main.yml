@@ -9,6 +9,7 @@
     - jenkinsfirewall
     - jenkinsconfig
     - jenkinsplugins
+    - jenkinsansible
     - jenkinsmatrix
     - jenkinsusers
 
@@ -62,6 +63,19 @@
   tags:
     - jenkinsplugins
 
+# Setup plugins
+- name: Setup ansible plugin
+  jenkins_script:
+    user: "{{ jenkins_admin_user.username }}"
+    password: "{{ jenkins_admin_password }}"
+    script: "{{ jenkins_script_plugin-ansible-setup }}"
+    url: "{{ jenkins_external_url }}"
+    validate_certs: 'yes'
+  register: plugin_ansible_status
+  changed_when: plugin_ansible_status.output.find("ansible plugin set") != -1
+  tags:
+    - jenkinsansible
+
 # Security strategy
 - name: Set matrix strategy
   jenkins_script:
@@ -86,16 +100,8 @@
 
 # Credentials
 
-
-
-
-- debug:
-    msg: "{{ jenkins_admin_password }}"
-
 # Jobs
 
-#- include: "{{ playbook_dir }}/tasks/vagrant-user.yml"
-  #when: item.username == 'vagrant'
-  #with_items: "{{ users }}"
-  #tags:
-    #- vagrant
+# - include: "{{ playbook_dir }}/tasks/vagrant-user.yml"
+#   tags:
+#     - vagrant

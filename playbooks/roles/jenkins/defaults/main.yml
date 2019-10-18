@@ -66,13 +66,19 @@ jenkins_plugins:
     enabled: 'yes'
   ansible:
     enabled: 'yes'
-  gitlab-plugin:
+  github:
     enabled: 'yes'
-  gitlab-hook:
-    enabled: 'yes'
+  # gitlab-plugin:
+  #   enabled: 'yes'
+  # gitlab-hook:
+  #   enabled: 'yes'
+#github-branch-source
+#github-oauth
+#github
 
 # Scripts
 jenkins_script_security_init_temp: 'security-init.groovy'
 # jenkins_script_security_users_temp: 'security-users.groovy'
 jenkins_script_security_users: "{{ lookup('file', 'groovy/security-users.groovy') }}"
 jenkins_script_security_strategy_matrix: "{{ lookup('file', 'groovy/security-strategy-matrix.groovy') }}"
+jenkins_script_plugin-ansible-setup:  "{{ lookup('file', 'groovy/plugin-ansible-setup.groovy') }}"

@@ -38,6 +38,16 @@ servers=[
   }
 ]
 
+# servers=[
+#   {
+#    :hostname => "vm-testbox",
+#    :ip => PRIVATE_NET + "103",
+#    :ram => "1024",
+#    :cpu => "1",
+#    :group => "testweb"
+#   }
+# ]
+
 #servers=[
 #  {
 #    :hostname => "vm-gitlab",
@@ -55,7 +65,7 @@ servers=[
 #  }
 #]
 
-#servers=[
+# servers=[
 #  {
 #    :hostname => "vm-jenkins",
 #    :ip => PRIVATE_NET + "102",
@@ -70,7 +80,7 @@ servers=[
 #    :cpu => "1",
 #    :group => "testweb"
 #  }
-#]
+# ]
 
 Vagrant.configure("2") do |config|
   servers.each do |machine|

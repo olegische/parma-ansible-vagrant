@@ -1,3 +1,3 @@
 #! /bin/bash
 
-PLAYBOOK_DIR="${SCRIPT_DIR}/playbooks/prov"
+PLAYBOOK_DIR="${SCRIPT_DIR}/playbooks"
