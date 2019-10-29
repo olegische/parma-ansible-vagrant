@@ -50,3 +50,4 @@ host_ssh_key_bits: 4096
 host_ssh_key_type: 'rsa'
 host_ssh_key_file: ".ssh/id_{{ host_ssh_key_type }}"
 host_ssh_socket_dir: '.ssh/cm_socket'
+ssh_passphrase: ''

@@ -39,6 +39,30 @@ UsernamePasswordCredentialsImpl gitlabAccount = new UsernamePasswordCredentialsI
 );
 credStore.addCredentials(domain, gitlabAccount);
 
+// GITLAB
+// import jenkins.model.*
+// import com.cloudbees.plugins.credentials.*
+// import com.cloudbees.plugins.credentials.common.*
+// import com.cloudbees.plugins.credentials.domains.*
+// import com.cloudbees.plugins.credentials.impl.*
+// import com.dabsquared.gitlabjenkins.connection.*
+// import hudson.util.Secret
+
+// domain = Domain.global()
+// store = Jenkins.instance.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
+
+// token = new Secret("my-token")
+
+// gitlabToken = new GitLabApiTokenImpl(
+//   CredentialsScope.GLOBAL,
+//   "gitlab-token",
+//   "token for gitlab",
+//   token
+// )
+
+// store.addCredentials(domain, gitlabToken)
+
+
 // !!! add privae key for jenkins to connect ssh vm-testbox jenkins user
 
 

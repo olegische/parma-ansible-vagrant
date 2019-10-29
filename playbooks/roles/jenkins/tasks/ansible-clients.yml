@@ -1,0 +1,17 @@
+---
+# file: roles/jenkins/tasks/ansible-clients.yml
+
+- name: Fetch {{ ansible_user_srv.username }} user public ssh key
+    shell: "cat home/{{ ansible_user_srv.username }}/.ssh/id_rsa.pub"
+    register: ssh_key
+    tags:
+      - ansibleclients
+
+  - name: Deploy key on {{ item }} servers
+    authorized_key:
+      user: "{{ ansible_user_srv.username }}"
+      key: "{{ ssh_key.stdout }}"
+    delegate_to: "{{ item }}"
+    failed_when: false
+    tags:
+      - ansibleclients

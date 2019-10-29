@@ -98,9 +98,33 @@
   tags:
     - jenkinsusers
 
+# Ansible
+- name: Configure ansible
+  include: 'ansible-clients.yml'
+  with_items: "{{ groups['testweb'] }}"
+  tags:
+    - ansibleclients
+
 # Credentials
+- name: Create ssh credential
+  jenkins_script:
+    user: "{{ jenkins_admin_user.username }}"
+    password: "{{ jenkins_admin_password }}"
+    script: "{{ jenkins_script_credentials }}"
+    url: "{{ jenkins_external_url }}"
+    validate_certs: 'yes'
+    args:
+      username: "{{ ansible_user_srv.username }}"
+      key_file: "home/{{ ansible_user_srv.username }}/.ssh/id_rsa"
+      credential_type: "ssh"
+  register: credentials_status
+  changed_when: security_users_status.output.find("ssh credential created") != -1
+  tags:
+    - jenkinscredentials
 
 # Jobs
+
+
 
 # - include: "{{ playbook_dir }}/tasks/vagrant-user.yml"
 #   tags:

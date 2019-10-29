@@ -110,6 +110,7 @@ class Security {
             // strategy.add(CredentialsProvider.UPDATE, un);
             // strategy.add(CredentialsProvider.VIEW, un);
         }
+        flag = true;
         return flag;
     }
 }

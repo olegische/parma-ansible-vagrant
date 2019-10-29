@@ -49,3 +49,8 @@
 - include: hostfile.yml
   tags:
     - hostfile
+
+- include: "{{ playbook_dir }}/tasks/ssh-keys.yml"
+  with_items: "{{ users }}"
+  tags:
+    - sshkeys
