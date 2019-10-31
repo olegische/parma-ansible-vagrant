@@ -1,8 +1,0 @@
----
-# file: testweb.yml
-
-- name: Configure testing servers
-  hosts: testweb
-
-  roles:
-    - testbox

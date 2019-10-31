@@ -122,10 +122,6 @@
   tags:
     - jenkinscredentials
 
-# Jobs
-
-
-
 # - include: "{{ playbook_dir }}/tasks/vagrant-user.yml"
 #   tags:
 #     - vagrant

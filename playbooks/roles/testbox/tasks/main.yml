@@ -1,13 +1,6 @@
 ---
 # file: roles/testbox/tasks/main.yml
 
-
-- name: Fetch jenkins-server ansible user public ssh key
-  shell: cat ~/.ssh/id_rsa.pub
-  register: ssh_keys
-  tags:
-    - ssh
-
 # Users
 # - include: "{{ playbook_dir }}/tasks/vagrant-user.yml"
 #   tags:

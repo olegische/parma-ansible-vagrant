@@ -2,7 +2,11 @@
 # vi: set ft=ruby :
 
 PRIVATE_NET="192.168.99."
+VAULT_ID_DIR="/home/ansible/.vault_pass/"
 VAULT_ID="prov"
+VAULT_ID_SUFFIX="prov"
+BOX_OS="centos/7"
+PLAYBOOK_DIR="playbooks/"
 
 #servers=[
 #  {
@@ -38,16 +42,6 @@ servers=[
   }
 ]
 
-# servers=[
-#   {
-#    :hostname => "vm-testbox",
-#    :ip => PRIVATE_NET + "103",
-#    :ram => "1024",
-#    :cpu => "1",
-#    :group => "testweb"
-#   }
-# ]
-
 #servers=[
 #  {
 #    :hostname => "vm-gitlab",
@@ -65,28 +59,11 @@ servers=[
 #  }
 #]
 
-# servers=[
-#  {
-#    :hostname => "vm-jenkins",
-#    :ip => PRIVATE_NET + "102",
-#    :ram => "1024",
-#    :cpu => "1",
-#    :group => "ciservers"
-#  },
-#  {
-#    :hostname => "vm-testbox",
-#    :ip => PRIVATE_NET + "103",
-#    :ram => "1024",
-#    :cpu => "1",
-#    :group => "testweb"
-#  }
-# ]
-
 Vagrant.configure("2") do |config|
   servers.each do |machine|
     config.vm.define machine[:hostname] do |node|
 
-      node.vm.box = "centos/7"
+      node.vm.box = BOX_OS
       node.vm.box_check_update = false
       node.vm.hostname = machine[:hostname]
 
@@ -105,10 +82,10 @@ Vagrant.configure("2") do |config|
       node.vm.provision "ansible" do |ansible|
 #        ansible.verbose = "v"
         ansible.compatibility_mode = "auto"
-        ansible.playbook = "playbooks/prov/" + machine[:group] + ".yml"
+        ansible.playbook = PLAYBOOK_DIR + machine[:group] + ".yml"
         ansible.become = true
-        ansible.inventory_path = "playbooks/prov/hosts"
-        ansible.raw_arguments = ["--vault-id", "/home/ansible/.vault_pass/" + VAULT_ID + "_pass"]
+        ansible.inventory_path = PLAYBOOK_DIR + "hosts"
+        ansible.raw_arguments = ["--vault-id", VAULT_ID_DIR + VAULT_ID + VAULT_ID_SUFFIX]
       end
     end
   end
