@@ -126,7 +126,7 @@ parma-task-srv.sh.
   Настройку можно произвести в файле playbooks-prov/group_vars/all.yml,
   переменная vault_id_path.
 - Создание паролей vault-id меток prov, dev, stage, prod по адресу
-  /home/ansible/.vault_pass/\<label\>\_pass. Настройку можно произвести в файле 
+  /home/ansible/.vault_pass/\<label\>\_pass. Настройку можно произвести в файле
   playbooks-prov/group_vars/all.yml, переменная vault_id_labels.
 
 Особенности:
@@ -194,4 +194,4 @@ parma-task-srv.sh.
   + Добавление SSH pub ключей ansible клиенту vm-testbox в файл по адресу /home/ansible/.ssh/authorized_keys.
 - Присвоение рандомных паролей пользователям root и vagrant.
 - Пользователям ansible и vagrant разрешается выполнение с паролем любых команд
-  от имени любого пользователя с использованием sudo (см. group_vars/testweb.yml).
+  от имени любого пользователя с использованием sudo (см. group_vars/testweb.yml).  
